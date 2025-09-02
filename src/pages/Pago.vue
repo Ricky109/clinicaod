@@ -33,8 +33,9 @@ async function refrescar() {
 
       <div class="mt-2">
         <button class="btn btn-secondary" @click="refrescar">Refrescar</button>
-        <router-link class="btn btn-primary" to="/historial" style="margin-left:8px;">Salir</router-link>
+        <router-link class="btn btn-primary btn-SALIR" to="/">SALIR</router-link>
       </div>
     </div>
   </div>
 </template>
+

@@ -12,6 +12,13 @@ async function buscar() {
     error.value = ''
     buscando.value = true
     await store.buscarPaciente(dni.value)
+    // Si es nuevo inicializamos los campos separados
+    if (store.nuevo) {
+      store.paciente.apellido1 = ''
+      store.paciente.apellido2 = ''
+      store.paciente.nombres = ''
+      store.paciente.CNROCEL = ''
+    }
   } catch (e) {
     error.value = e.message
   } finally {
@@ -22,11 +29,26 @@ async function buscar() {
 async function guardarNuevo() {
   try {
     error.value = ''
+    // Construimos CNOMBRE antes de registrar
+    store.paciente.CNOMBRE = `${store.paciente.apellido1 || ''}/${store.paciente.apellido2 || ''}/${store.paciente.nombres || ''}`
     await store.registrarPaciente(store.paciente)
   } catch (e) { error.value = e.message }
 }
 
 const soloLectura = computed(() => !store.nuevo && !!store.paciente)
+
+const primerApellido = computed(() => {
+  if (!store.paciente?.CNOMBRE) return ''
+  return store.paciente.CNOMBRE.split('/')[0] || ''
+})
+const segundoApellido = computed(() => {
+  if (!store.paciente?.CNOMBRE) return ''
+  return store.paciente.CNOMBRE.split('/')[1] || ''
+})
+const nombres = computed(() => {
+  if (!store.paciente?.CNOMBRE) return ''
+  return store.paciente.CNOMBRE.split('/')[2] || ''
+})
 </script>
 
 <template>
@@ -34,8 +56,10 @@ const soloLectura = computed(() => !store.nuevo && !!store.paciente)
     <h2>Buscar/Registrar Paciente</h2>
     <div class="grid grid-2">
       <input class="input" placeholder="DNI Paciente" v-model="dni" />
-      <div>
+      <div class="flex flex-col gap-2">
         <button class="btn btn-primary" @click="buscar" :disabled="buscando">Buscar</button>
+        <!-- Botón de salir -->
+        <router-link class="btn btn-primary btn-SALIR" to="/">SALIR</router-link>
       </div>
     </div>
 
@@ -43,11 +67,26 @@ const soloLectura = computed(() => !store.nuevo && !!store.paciente)
 
     <div v-if="store.paciente" class="mt-2">
       <h3>Datos del Paciente</h3>
-      <div class="grid grid-2">
-        <input class="input" placeholder="DNI" v-model="store.paciente.CNRODNI" :readonly="soloLectura" />
-        <input class="input" placeholder="Nombres y Apellidos" v-model="store.paciente.CNOMBRE" :readonly="soloLectura" />
-        <input class="input" placeholder="Nro Celular" v-model="store.paciente.CNROCEL" :readonly="soloLectura" />
+      <div class="grid grid-1">
+        <label>DNI:</label>
+        <input class="input" v-model="store.paciente.CNRODNI" :readonly="soloLectura" />
+
+        <label>Primer Apellido:</label>
+        <input v-if="store.nuevo" class="input" v-model="store.paciente.apellido1" />
+        <input v-else class="input" :value="primerApellido" readonly />
+
+        <label>Segundo Apellido:</label>
+        <input v-if="store.nuevo" class="input" v-model="store.paciente.apellido2" />
+        <input v-else class="input" :value="segundoApellido" readonly />
+
+        <label>Nombres:</label>
+        <input v-if="store.nuevo" class="input" v-model="store.paciente.nombres" />
+        <input v-else class="input" :value="nombres" readonly />
+
+        <label>Celular:</label>
+        <input class="input" v-model="store.paciente.CNROCEL" :readonly="soloLectura" />
       </div>
+
       <div class="mt-2" v-if="store.nuevo">
         <button class="btn btn-primary" @click="guardarNuevo">Guardar Paciente</button>
       </div>
@@ -57,3 +96,4 @@ const soloLectura = computed(() => !store.nuevo && !!store.paciente)
     </div>
   </div>
 </template>
+

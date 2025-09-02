@@ -26,7 +26,7 @@ onMounted(async () => {
       </tbody>
     </table>
     <div class="mt-2">
-      <router-link class="btn btn-secondary" to="/buscar">Salir</router-link>
+      <router-link class="btn btn-primary btn-SALIR" to="/">SALIR</router-link>
     </div>
   </div>
 </template>
