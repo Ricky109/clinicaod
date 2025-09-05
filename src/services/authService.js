@@ -1,34 +1,47 @@
-// Mock de login esquema paData
+import { sha512 } from 'js-sha512';
+
+const API_URL = 'https://transacciones.ucsm.edu.pe/MSERP/MsAplicativos';
+
 export async function login(paData) {
-  // paData = { CNRODNI, CCLAVE }
-  await delay(300)
+
+  const hashedPassword = sha512(paData.CCLAVE);
   
-  if (!paData.CNRODNI || !paData.CCLAVE) {
-    return { ERROR: 'DNI Y CLAVE REQUERIDOS' }
-  }
+  const requestBody = {
+    ID: 'LOGCOD',
+    CNRODOC: paData.CNRODNI,
+    CVERSION: '2.0',
+    CCLAVE: hashedPassword
+  };
+
+  try {
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      return { ERROR: 'Error de conexión con el servidor' };
+    }
+
+    const data = await response.json();
+    
+ 
+    if (data.ERROR) {
+      return { ERROR: data.ERROR };
+    }
+
   
-  // Generar código de estudiante único basado en el DNI
-  const codigoEstudiante = paData.CNRODNI
-  
-  // Simular diferentes usuarios para pruebas
-  const usuarios = {
-    '75767879': { CNOMBRE: 'PUCHICANAS/VICTOR', CCODALU: '75767879', CUSUCOD: '*123' },
-    '1234567890': { CNOMBRE: 'GARCIA/ANA MARIA', CCODALU: '1234567890', CUSUCOD: '*456' },
-    '9876543210': { CNOMBRE: 'LOPEZ/CARLOS', CCODALU: '9876543210', CUSUCOD: '*789' }
-  }
-  
-  const usuario = usuarios[paData.CNRODNI] || {
-    CNOMBRE: 'USUARIO/TEST',
-    CCODALU: paData.CNRODNI,
-    CUSUCOD: '*000'
-  }
-  
-  return {
-    CNRODNI: paData.CNRODNI,
-    CNOMBRE: usuario.CNOMBRE,
-    CCODALU: usuario.CCODALU,
-    CUSUCOD: usuario.CUSUCOD
+    return { 
+      CNRODNI: data.CNRODNI, 
+      CNOMBRE: data.CNOMBRE, 
+      CCODALU: data.CCODALU, 
+      CUSUCOD: data.CUSUCOD  
+    };
+
+  } catch (error) {
+    return { ERROR: 'DNI NO EXISTE' }; 
   }
 }
-
-function delay(ms){ return new Promise(r => setTimeout(r, ms)) }

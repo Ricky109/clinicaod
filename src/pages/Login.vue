@@ -15,13 +15,6 @@ function normalizeCodigo(value) {
   return String(value || '').replace(/\D+/g, '').slice(0, 10)
 }
 
-async function sha512Hex(text) {
-  const data = new TextEncoder().encode(text || '')
-  const hashBuffer = await crypto.subtle.digest('SHA-512', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
 async function submit() {
   error.value = ''
   try {
@@ -37,12 +30,14 @@ async function submit() {
       return
     }
 
+    // ✅ ENVIAR LA CLAVE EN TEXTO PLANO - el servicio se encarga del hash
     const payload = {
       CNRODNI: form.value.CNRODNI,
-      CCLAVE: await sha512Hex(String(form.value.CCLAVE))
+      CCLAVE: form.value.CCLAVE // ← TEXTO PLANO, no hasheado
     }
+    
     await auth.login(payload)
-    %router.push('/home')
+    router.push('/home')
   } catch (e) {
     error.value = e.message || 'Error'
   } finally {
@@ -72,7 +67,7 @@ async function submit() {
       </div>
 
       <div class="field password-field">
-        <input class="input fancy-input" placeholder="CONTRASEÑA" v-model="form.CCLAVE" type="password" />
+        <input class="input fancy-input" placeholder="Contraseña" v-model="form.CCLAVE" type="password" />
         <span class="eye" aria-hidden="true">👁️</span>
       </div>
 
