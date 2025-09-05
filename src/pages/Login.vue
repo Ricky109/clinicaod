@@ -72,7 +72,7 @@ async function submit() {
       </div>
 
       <div class="field password-field">
-        <input class="input fancy-input" placeholder="Contraseña" v-model="form.CCLAVE" type="password" />
+        <input class="input fancy-input" placeholder="CONTRASEÑA" v-model="form.CCLAVE" type="password" />
         <span class="eye" aria-hidden="true">👁️</span>
       </div>
 

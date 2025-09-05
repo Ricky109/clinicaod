@@ -53,18 +53,18 @@ const nombres = computed(() => {
 
 <template>
   <div class="card">
-    <h2>Buscar/Registrar Paciente</h2>
+    <h2>BUSCAR/REGISTRAR PACIENTE</h2>
     <!-- Botón INICIO debajo del título -->
     <div class="mt-2" style="text-align:center;">
       <router-link class="btn btn-secondary" to="/home">INICIO</router-link>
     </div>
     <div class="grid grid-2">
-      <input class="input" placeholder="DNI Paciente" v-model="dni" />
+      <input class="input" placeholder="DNI PACIENTE" v-model="dni" />
       
       <!-- Botón Buscar en su propio contenedor -->
       <div style="text-align:center;">
         <button class="btn btn-primary" @click="buscar" :disabled="buscando">
-          Buscar
+          BUSCAR
         </button>
       </div>
     </div>
@@ -74,7 +74,7 @@ const nombres = computed(() => {
     <p v-if="error" style="color:#b91c1c">{{ error }}</p>
 
     <div v-if="store.paciente" class="mt-2">
-      <h3>Datos del Paciente</h3>
+      <h3>DATOS DEL PACIENTE</h3>
       <div class="grid grid-1">
         <label>DNI:</label>
         <input 
@@ -83,19 +83,19 @@ const nombres = computed(() => {
           :readonly="soloLectura" 
         />
 
-        <label>Primer Apellido:</label>
+        <label>PRIMER APELLIDO:</label>
         <input v-if="store.nuevo" class="input" v-model="store.paciente.apellido1" @input="store.paciente.apellido1 = store.paciente.apellido1.toUpperCase()" />
         <input v-else class="input input-readonly" :value="primerApellido" readonly />
 
-        <label>Segundo Apellido:</label>
+        <label>SEGUNDO APELLIDO:</label>
         <input v-if="store.nuevo" class="input" v-model="store.paciente.apellido2" @input="store.paciente.apellido2 = store.paciente.apellido2.toUpperCase()" />
         <input v-else class="input input-readonly" :value="segundoApellido" readonly />
 
-        <label>Nombres:</label>
+        <label>NOMBRES:</label>
         <input v-if="store.nuevo" class="input" v-model="store.paciente.nombres" @input="store.paciente.nombres = store.paciente.nombres.toUpperCase()" />
         <input v-else class="input input-readonly" :value="nombres" readonly />
 
-        <label>Celular:</label>
+        <label>CELULAR:</label>
         <input 
           class="input" 
           v-model="store.paciente.CNROCEL" 
@@ -107,10 +107,10 @@ const nombres = computed(() => {
       </div>
 
       <div class="mt-2" v-if="store.nuevo">
-        <button class="btn btn-primary" @click="guardarNuevo">Guardar Paciente</button>
+        <button class="btn btn-primary" @click="guardarNuevo">GUARDAR PACIENTE</button>
       </div>
       <div class="mt-2">
-        <router-link class="btn btn-success" to="/atencion">Tratamiento</router-link>
+        <router-link class="btn btn-success" to="/atencion">TRATAMIENTO</router-link>
       </div>
     </div>
   </div>
