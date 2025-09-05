@@ -29,7 +29,7 @@ function agregarTratamiento() {
     <h2>ATENCIÓN</h2>
     <!-- Botón ATRÁS debajo del título -->
     <div class="mt-2" style="text-align:center;">
-      <router-link class="btn btn-secondary" to="/buscar">ATRÁS</router-link>
+      <router-link class="btn btn-SALIR" to="/home">INICIO</router-link>
     </div>
 
     <div v-if="!store.paciente">
@@ -114,7 +114,7 @@ function agregarTratamiento() {
         </p>
         <div class="flex gap-2">
           <router-link
-            class="btn btn-primary"
+            class="btn btn-SALIR"
             to="/pago"
             @click.prevent="
               $router.push('/pago');

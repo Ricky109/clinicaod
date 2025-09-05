@@ -56,14 +56,14 @@ const nombres = computed(() => {
     <h2>BUSCAR/REGISTRAR PACIENTE</h2>
     <!-- Botón INICIO debajo del título -->
     <div class="mt-2" style="text-align:center;">
-      <router-link class="btn btn-secondary" to="/home">INICIO</router-link>
+      <router-link class="btn btn-SALIR" to="/home">INICIO</router-link>
     </div>
     <div class="grid grid-2">
       <input class="input" placeholder="DNI PACIENTE" v-model="dni" />
       
       <!-- Botón Buscar en su propio contenedor -->
       <div style="text-align:center;">
-        <button class="btn btn-primary" @click="buscar" :disabled="buscando">
+        <button class="btn btn-SALIR" @click="buscar" :disabled="buscando">
           BUSCAR
         </button>
       </div>
@@ -110,7 +110,7 @@ const nombres = computed(() => {
         <button class="btn btn-primary" @click="guardarNuevo">GUARDAR PACIENTE</button>
       </div>
       <div class="mt-2">
-        <router-link class="btn btn-success" to="/atencion">TRATAMIENTO</router-link>
+        <router-link class="btn btn-SALIR" to="/atencion">TRATAMIENTO</router-link>
       </div>
     </div>
   </div>

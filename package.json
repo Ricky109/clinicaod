@@ -12,6 +12,7 @@
   "dependencies": {
     "@capacitor/cli": "^7.4.3",
     "axios": "^1.7.2",
+    "js-sha512": "^0.9.0",
     "pinia": "^2.1.7",
     "vue": "^3.4.21",
     "vue-multiselect": "^3.3.1",

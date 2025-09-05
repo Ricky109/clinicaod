@@ -1,9 +1,9 @@
 <template>
-  <header class="header">
-    <h1 v-if="!isLogin && auth.isLogged">{{ auth.user?.CNOMBRE || 'USUARIO' }}</h1>
-    <h1 v-if="!isLogin && !auth.isLogged">CLÍNICA ODONTOLÓGICA</h1>
+  <header v-if="!isLogin" class="header">
+    <h1 v-if="auth.isLogged">{{ auth.user?.CNOMBRE || 'USUARIO' }}</h1>
+    <h1 v-else>CLÍNICA ODONTOLÓGICA</h1>
     <nav>
-      <button v-if="!isLogin && auth.isLogged" class="btn btn-SALIR" @click="onLogout">LOGOUT</button>
+      <button v-if="auth.isLogged" class="btn btn-SALIR" @click="onLogout">LOGOUT</button>
     </nav>
   </header>
   <main class="container">

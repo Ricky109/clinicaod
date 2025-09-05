@@ -63,7 +63,7 @@ function getEstadoIcon(estado) {
     </div>
 
     <div class="mt-2" style="text-align:center;">
-      <router-link class="btn btn-secondary" to="/home">INICIO</router-link>
+      <router-link class="btn btn-SALIR" to="/home">INICIO</router-link>
     </div>
   </div>
 </template>

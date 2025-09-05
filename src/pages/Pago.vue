@@ -28,7 +28,7 @@ function getEstadoIcon(estado) {
     
     <!-- Botón INICIO debajo del título -->
     <div class="mt-2" style="text-align:center;">
-      <router-link class="btn btn-primary" to="/home">INICIO</router-link>
+      <router-link class="btn btn-SALIR" to="/home">INICIO</router-link>
     </div>
     
     <div v-if="!store.nroPago">
