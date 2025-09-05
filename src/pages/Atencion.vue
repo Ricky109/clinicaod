@@ -12,7 +12,7 @@ const tratamientoSeleccionado = ref(null);
 // Opciones adaptadas al multiselect (mostrar nombre + precio pero guardar código)
 const opcionesTratamientos = computed(() =>
   tratamientos.map((t) => ({
-    label: `${t.CDESCRI} (S/ ${t.NPRECIO.toFixed(2)})`,
+    label: `${t.CDESCRI} (${t.NPRECIO.toFixed(2)})`,
     value: t.CCODART,
   }))
 );
@@ -26,29 +26,33 @@ function agregarTratamiento() {
 
 <template>
   <div class="card">
-    <h2>Atención</h2>
+    <h2>ATENCIÓN</h2>
+    <!-- Botón ATRÁS debajo del título -->
+    <div class="mt-2" style="text-align:center;">
+      <router-link class="btn btn-secondary" to="/buscar">ATRÁS</router-link>
+    </div>
 
     <div v-if="!store.paciente">
-      <p>Primero seleccione un paciente.</p>
-      <router-link class="link" to="/buscar">Volver a Buscar</router-link>
+      <p>PRIMERO SELECCIONE UN PACIENTE.</p>
+      <router-link class="link" to="/buscar">VOLVER A BUSCAR</router-link>
     </div>
 
     <div v-else>
       <p>
-        <strong>Paciente:</strong>
+        <strong>PACIENTE:</strong>
         {{ store.paciente.CNOMBRE || store.paciente.CNRODNI }}
       </p>
 
       <!-- Menú desplegable con buscador -->
       <div class="mt-2">
         <label for="tratamiento" class="block mb-1">
-          Seleccionar tratamiento:
+          SELECCIONAR TRATAMIENTO:
         </label>
         <div class="multiselect-wrapper">
           <Multiselect
             v-model="tratamientoSeleccionado"
             :options="opcionesTratamientos"
-            placeholder="Buscar o seleccionar..."
+            placeholder="BUSCAR O SELECCIONAR..."
             label="label"
             track-by="value"
             :searchable="true"
@@ -61,61 +65,54 @@ function agregarTratamiento() {
       </div>
 
       <!-- Tratamientos seleccionados -->
-      <h3 class="mt-2">Seleccionados</h3>
+      <h3 class="mt-2">SELECCIONADOS</h3>
       <div v-if="store.tratamientos.length === 0">
-        No hay tratamientos seleccionados.
+        NO HAY TRATAMIENTOS SELECCIONADOS.
       </div>
-      <div v-else class="overflow-x-auto">
-        <table style="width: 100%; border-collapse: collapse; font-size: 14px">
-          <thead>
-            <tr>
-              <th style="text-align: left">Código</th>
-              <th style="text-align: left">Tratamiento</th>
-              <th style="width: 80px">Cant.</th>
-              <th>Precio</th>
-              <th>Total</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="it in store.tratamientos" :key="it.CCODART">
-              <td>{{ it.CCODART }}</td>
-              <td>{{ it.CDESCRI }}</td>
-              <td>
-                <input
-                  class="input"
-                  type="number"
-                  min="1"
-                  :value="it.NCANTID"
-                  @input="
-                    store.actualizarCantidad(it.CCODART, $event.target.value)
-                  "
-                  style="width: 60px"
-                />
-              </td>
-              <td>S/ {{ it.NPRECIO.toFixed(2) }}</td>
-              <td>S/ {{ (it.NPRECIO * it.NCANTID).toFixed(2) }}</td>
-              <td>
-                <button
-                  class="btn btn-secondary"
-                  @click="store.quitarTratamiento(it.CCODART)"
-                >
-                  ✕
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div v-else class="tratamientos-container">
+        <div
+          v-for="it in store.tratamientos"
+          :key="it.CCODART"
+          class="tratamiento-card"
+        >
+          <div class="tratamiento-header">
+            <strong>{{ it.CDESCRI }}</strong>
+            <button
+              class="btn btn-secondary btn-sm"
+              @click="store.quitarTratamiento(it.CCODART)"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div class="tratamiento-body">
+            <div>
+              <label>CANT.:</label>
+              <input
+                class="input"
+                type="number"
+                min="1"
+                :value="it.NCANTID"
+                @input="
+                  store.actualizarCantidad(it.CCODART, $event.target.value)
+                "
+              />
+            </div>
+            <div>
+              <label>PRECIO:</label>
+              <span>S/ {{ it.NPRECIO.toFixed(2) }}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Acciones -->
       <div class="mt-2 flex justify-between items-center flex-wrap gap-2">
         <p>
-          <strong>Monto Total:</strong>
+          <strong>MONTO TOTAL:</strong>
           S/ {{ store.montoTotal.toFixed(2) }}
         </p>
         <div class="flex gap-2">
-          <router-link class="btn btn-secondary" to="/buscar">Atrás</router-link>
           <router-link
             class="btn btn-primary"
             to="/pago"
@@ -124,7 +121,7 @@ function agregarTratamiento() {
               store.grabarConsumo().catch((e) => alert(e.message));
             "
           >
-            Grabar
+            GRABAR
           </router-link>
         </div>
       </div>

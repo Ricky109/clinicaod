@@ -1,8 +1,9 @@
 <template>
   <header class="header">
-    <h1>Clínica Odontológica UCSM</h1>
+    <h1 v-if="!isLogin && auth.isLogged">{{ auth.user?.CNOMBRE || 'USUARIO' }}</h1>
+    <h1 v-if="!isLogin && !auth.isLogged">CLÍNICA ODONTOLÓGICA</h1>
     <nav>
-      <router-link class="link" to="/historial">Historial</router-link>
+      <button v-if="!isLogin && auth.isLogged" class="btn btn-SALIR" @click="onLogout">LOGOUT</button>
     </nav>
   </header>
   <main class="container">
@@ -11,4 +12,18 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from './store/authStore'
+
+const router = useRouter()
+const route = useRoute()
+const auth = useAuthStore()
+
+const isLogin = computed(() => route.path === '/login')
+
+function onLogout() {
+  auth.logout()
+  router.push('/login')
+}
 </script>

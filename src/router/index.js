@@ -4,6 +4,7 @@ import { useAuthStore } from '../store/authStore'
 const routes = [
   { path: '/', redirect: '/login' },
   { path: '/login', component: () => import('../pages/Login.vue') },
+  { path: '/home', component: () => import('../pages/Home.vue'), meta: { auth: true } },
   { path: '/buscar', component: () => import('../pages/BuscarPaciente.vue'), meta: { auth: true } },
   { path: '/atencion', component: () => import('../pages/Atencion.vue'), meta: { auth: true } },
   { path: '/pago', component: () => import('../pages/Pago.vue'), meta: { auth: true } },
