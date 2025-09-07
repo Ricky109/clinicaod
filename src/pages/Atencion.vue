@@ -26,11 +26,7 @@ function agregarTratamiento() {
 
 <template>
   <div class="card">
-    <h2>ATENCIÓN</h2>
-    <!-- Botón ATRÁS debajo del título -->
-    <div class="mt-2" style="text-align:center;">
-      <router-link class="btn btn-SALIR" to="/home">INICIO</router-link>
-    </div>
+    <h2 style="text-align: center;">ATENCIÓN</h2>
 
     <div v-if="!store.paciente">
       <p>PRIMERO SELECCIONE UN PACIENTE.</p>

@@ -33,13 +33,10 @@ export async function login(paData) {
       return { ERROR: data.ERROR };
     }
 
-  
-    return { 
-      CNRODNI: data.CNRODNI, 
-      CNOMBRE: data.CNOMBRE, 
-      CCODALU: data.CCODALU, 
-      CUSUCOD: data.CUSUCOD  
-    };
+    // Guardar TODA la respuesta de la API, incluyendo CDNIALU
+    console.log('Respuesta completa de la API de login:', data);
+    
+    return data; // Devolver toda la respuesta sin filtrar
 
   } catch (error) {
     return { ERROR: 'DNI NO EXISTE' }; 

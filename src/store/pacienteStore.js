@@ -6,7 +6,7 @@ import { useAuthStore } from './authStore'
 
 export const usePacienteStore = defineStore('paciente', {
   state: () => ({
-    paciente: null,         // { CNRODNI, CNOMBRE, CNROCEL }
+    paciente: null,         // { CNRODNI, CAPEPAT, CAPEMAT, CNOMBRE, CNROCEL, CSEXO, DNACIMI, CDNIEST }
     nuevo: false,
     tratamientos: [],       // seleccionados [{ CCODART, CDESCRI, NCANTID, NPRECIO }]
     nroPago: null,
@@ -20,16 +20,37 @@ export const usePacienteStore = defineStore('paciente', {
       if (res.ERROR) throw new Error(res.ERROR)
       if (res.CNUEVO === 'S') {
         this.nuevo = true
-        this.paciente = { CNRODNI: dni, CNOMBRE: '', CNROCEL: '' }
+        this.paciente = { 
+          CNRODNI: dni, 
+          CAPEPAT: '', 
+          CAPEMAT: '', 
+          CNOMBRE: '', 
+          CNROCEL: '',
+          CSEXO: 'M',
+          DNACIMI: '',
+          CDNIEST: ''
+        }
       } else {
         this.nuevo = false
-        this.paciente = { CNRODNI: res.CNRODNI, CNOMBRE: res.CNOMBRE, CNROCEL: res.CNROCEL || '' }
+        this.paciente = { 
+          CNRODNI: res.CNRODNI, 
+          CAPEPAT: res.CAPEPAT || '', 
+          CAPEMAT: res.CAPEMAT || '', 
+          CNOMBRE: res.CNOMBRE || '', 
+          CNROCEL: res.CNROCEL || '',
+          CSEXO: res.CSEXO || 'M',
+          DNACIMI: res.DNACIMI || '',
+          CDNIEST: res.CDNIEST || ''
+        }
       }
       return res
     },
-    async registrarPaciente({ CNRODNI, CNOMBRE, CNROCEL }) {
+    async registrarPaciente(pacienteData) {
       const auth = useAuthStore()
-      const res = await pacienteService.registrar({ CNRODNI, CNOMBRE, CNROCEL, CUSUCOD: auth.user?.CUSUCOD })
+      const res = await pacienteService.registrar({ 
+        ...pacienteData, 
+        CUSUCOD: auth.user?.CUSUCOD 
+      })
       if (res.ERROR) throw new Error(res.ERROR)
       this.nuevo = false
       return res

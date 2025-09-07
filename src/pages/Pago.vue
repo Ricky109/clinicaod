@@ -24,12 +24,7 @@ function getEstadoIcon(estado) {
 
 <template>
   <div class="card">
-    <h2>PAGO</h2>
-    
-    <!-- Botón INICIO debajo del título -->
-    <div class="mt-2" style="text-align:center;">
-      <router-link class="btn btn-SALIR" to="/home">INICIO</router-link>
-    </div>
+    <h2 style="text-align: center;">PAGO</h2>
     
     <div v-if="!store.nroPago">
       <p>NO HAY PAGO GENERADO. VUELVA A <router-link class="link" to="/atencion">ATENCIÓN</router-link>.</p>

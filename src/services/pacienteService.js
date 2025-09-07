@@ -3,7 +3,16 @@
 
 const _db = new Map([
   // paciente de ejemplo pre-existente
-  ['75767879', { CNRODNI: '75767879', CNOMBRE: 'ROSAS/GUEVARA/VICTOR JOSE', CNROCEL: '951957852' }]
+  ['75767879', { 
+    CNRODNI: '75767879', 
+    CAPEPAT: 'ROSAS', 
+    CAPEMAT: 'GUEVARA', 
+    CNOMBRE: 'VICTOR JOSE', 
+    CNROCEL: '951957852',
+    CSEXO: 'M',
+    DNACIMI: '1990-05-15',
+    CDNIEST: '75767879'
+  }]
 ]);
 
 // BUSCAR
@@ -19,22 +28,42 @@ export async function buscar(paData) {
     return {
       CNRODNI: p.CNRODNI,
       CNUEVO: 'N',
+      CAPEPAT: p.CAPEPAT,
+      CAPEMAT: p.CAPEMAT,
       CNOMBRE: p.CNOMBRE,
-      CNROCEL: p.CNROCEL || ''
+      CNROCEL: p.CNROCEL || '',
+      CSEXO: p.CSEXO || 'M',
+      DNACIMI: p.DNACIMI || '',
+      CDNIEST: p.CDNIEST || p.CNRODNI
     };
   }
 
   // Simulación: si termina en '1' -> paciente nuevo
   if (dni.endsWith('1')) {
-    return { CNRODNI: dni, CNUEVO: 'S', CNOMBRE: '', CNROCEL: '' };
+    return { 
+      CNRODNI: dni, 
+      CNUEVO: 'S', 
+      CAPEPAT: '', 
+      CAPEMAT: '', 
+      CNOMBRE: '', 
+      CNROCEL: '',
+      CSEXO: 'M',
+      DNACIMI: '',
+      CDNIEST: ''
+    };
   }
 
   // Simulación: devolver datos ficticios si no está en DB
   return {
     CNRODNI: dni,
     CNUEVO: 'N',
-    CNOMBRE: 'ROSAS/GUEVARA/VICTOR JOSE',
-    CNROCEL: '999888777' // 👈 ahora también inventamos celular
+    CAPEPAT: 'ALOSILLA',
+    CAPEMAT: 'MORENO SANCHEZ',
+    CNOMBRE: 'LLIGUERMO',
+    CNROCEL: '999999999',
+    CSEXO: 'M',
+    DNACIMI: '2000-07-07',
+    CDNIEST: '70244827'
   };
 }
 
@@ -44,21 +73,24 @@ export async function registrar(paData) {
   const dni = paData && paData.CNRODNI ? String(paData.CNRODNI) : '';
   if (!dni) return { ERROR: 'DNI NO EXISTE' };
 
-  // Si envían campos separados, construir CNOMBRE
-  let nombre = paData.CNOMBRE;
-  if (!nombre && (paData.apellido1 || paData.apellido2 || paData.nombres)) {
-    const a1 = paData.apellido1 || '';
-    const a2 = paData.apellido2 || '';
-    const n  = paData.nombres  || '';
-    nombre = `${a1}/${a2}/${n}`;
+  // Validar campos requeridos
+  if (!paData.CAPEPAT || !paData.CAPEMAT || !paData.CNOMBRE) {
+    return { ERROR: 'Error en llenado de campos requeridos' };
   }
 
-  if (!nombre) return { ERROR: 'Error en llenado de campos' };
+  const cel = paData.CNROCEL || '';
 
-  const cel = paData.CNROCEL || paData.CELULAR || '';
-
-  // Guardamos en "DB" en memoria
-  _db.set(dni, { CNRODNI: dni, CNOMBRE: nombre, CNROCEL: cel });
+  // Guardamos en "DB" en memoria con todos los campos
+  _db.set(dni, { 
+    CNRODNI: dni, 
+    CAPEPAT: paData.CAPEPAT,
+    CAPEMAT: paData.CAPEMAT,
+    CNOMBRE: paData.CNOMBRE,
+    CNROCEL: cel,
+    CSEXO: paData.CSEXO || 'M',
+    DNACIMI: paData.DNACIMI || '',
+    CDNIEST: paData.CDNIEST || dni
+  });
 
   return { OK: 'OK' };
 }

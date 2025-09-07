@@ -7,7 +7,9 @@ export const useAuthStore = defineStore('auth', {
     token: null
   }),
   getters: {
-    isLogged: (s) => !!s.user
+    isLogged: (s) => !!s.user,
+    // Getter para obtener el CDNIALU como identificador principal
+    codigoEstudiante: (s) => s.user?.CDNIALU || s.user?.CCODALU || null
   },
   actions: {
     async login(paData) {

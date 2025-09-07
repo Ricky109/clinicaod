@@ -3,7 +3,7 @@
 
 <template>
   <div class="card">
-    <h2>INICIO</h2>
+    <h2 style="text-align: center;">INICIO</h2>
 
     <div class="mt-2" style="text-align:center;">
       <router-link class="btn btn-SALIR" to="/buscar">BUSCAR/REGISTRAR PACIENTE</router-link>

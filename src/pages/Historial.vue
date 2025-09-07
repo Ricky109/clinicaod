@@ -5,16 +5,43 @@ import * as pagoService from '../services/pagoService'
 
 const auth = useAuthStore()
 const items = ref([])
+const cargando = ref(false)
+const error = ref('')
 
 onMounted(async () => {
-  // Debug: mostrar información del usuario
-  console.log('Usuario autenticado:', auth.user)
-  console.log('Código de estudiante:', auth.user?.CCODALU)
-  
-  // Usar el código de estudiante (CCODALU) del usuario autenticado
-  items.value = await pagoService.historial(auth.user?.CCODALU || '')
-  console.log('Pagos encontrados:', items.value)
+  await cargarHistorialPacientes()
 })
+
+async function cargarHistorialPacientes() {
+  try {
+    cargando.value = true
+    error.value = ''
+    
+    // Obtener el código de estudiante del usuario autenticado
+    // Usar CDNIALU como identificador principal (devuelto por la API de login)
+    const codigoEstudiante = auth.codigoEstudiante
+    
+    if (!codigoEstudiante) {
+      error.value = 'No se encontró el código de estudiante'
+      return
+    }
+    
+    console.log('Usuario autenticado completo:', auth.user)
+    console.log('CDNIALU (identificador principal):', auth.user?.CDNIALU)
+    console.log('CCODALU (alternativo):', auth.user?.CCODALU)
+    console.log('Código de estudiante seleccionado:', codigoEstudiante)
+    
+    // Llamar a la API COD1021
+    items.value = await pagoService.historialPacientesAtendidos(codigoEstudiante)
+    console.log('Pacientes atendidos encontrados:', items.value)
+    
+  } catch (e) {
+    error.value = e.message || 'Error al cargar el historial de pacientes'
+    console.error('Error:', e)
+  } finally {
+    cargando.value = false
+  }
+}
 
 function getEstadoIcon(estado) {
   switch (estado.toLowerCase()) {
@@ -28,17 +55,39 @@ function getEstadoIcon(estado) {
       return { icon: '❔', class: 'estado-desconocido' }
   }
 }
+
+function formatearFecha(fecha) {
+  if (!fecha) return 'No disponible'
+  const fechaObj = new Date(fecha)
+  return fechaObj.toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
 </script>
 
 <template>
   <div class="card">
-    <h2>HISTORIAL DE PAGOS</h2>
+    <h2 style="text-align: center;">HISTORIAL DE PACIENTES ATENDIDOS</h2>
 
-    <div class="historial-container">
-      <div v-if="items.length === 0" class="no-pagos">
-        <p>NO HAY PAGOS REGISTRADOS PARA ESTE ESTUDIANTE.</p>
-        <p>CÓDIGO DE ESTUDIANTE: {{ auth.user?.CCODALU || 'NO DISPONIBLE' }}</p>
+    <!-- Indicador de carga -->
+    <div v-if="cargando" class="cargando">
+      <p>Cargando historial de pacientes...</p>
+    </div>
+
+    <!-- Mensaje de error -->
+    <div v-else-if="error" class="error-message">
+      <p>{{ error }}</p>
+    </div>
+
+    <!-- Lista de pacientes -->
+    <div v-else class="historial-container">
+      <div v-if="items.length === 0" class="no-pacientes">
+        <p>NO HAY PACIENTES ATENDIDOS POR ESTE ESTUDIANTE</p>
+        <p>CÓDIGO DE ESTUDIANTE: {{ auth.codigoEstudiante || 'NO DISPONIBLE' }}</p>
       </div>
+      
       <div 
         v-for="it in items" 
         :key="it.codigo" 
@@ -59,17 +108,33 @@ function getEstadoIcon(estado) {
             {{ getEstadoIcon(it.estado).icon }}
           </span>
         </div>
+        <div class="historial-row">
+          <strong>FECHA:</strong> <span>{{ formatearFecha(it.fecha) }}</span>
+        </div>
       </div>
-    </div>
-
-    <div class="mt-2" style="text-align:center;">
-      <router-link class="btn btn-SALIR" to="/home">INICIO</router-link>
     </div>
   </div>
 </template>
 
 <style scoped>
-.no-pagos {
+.cargando {
+  text-align: center;
+  padding: 2rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.error-message {
+  color: #b91c1c;
+  background-color: #fee2e2;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 4px solid #b91c1c;
+  margin: 16px 0;
+  font-weight: 500;
+}
+
+.no-pacientes {
   text-align: center;
   padding: 2rem;
   background: #f8f9fa;
@@ -77,9 +142,51 @@ function getEstadoIcon(estado) {
   border: 1px solid #e9ecef;
 }
 
-.no-pagos p {
+.no-pacientes p {
   margin: 0.5rem 0;
   color: #6c757d;
   font-weight: 500;
 }
+
+/* Mantener estilos existentes del historial de pagos */
+.historial-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.historial-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.historial-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.historial-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.historial-row strong {
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.estado-icon {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.estado-pagado { color: green; }
+.estado-pendiente { color: orange; }
+.estado-anulado { color: red; }
+.estado-desconocido { color: gray; }
 </style>
