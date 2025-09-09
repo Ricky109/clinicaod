@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { usePacienteStore } from '../store/pacienteStore'
 
 const store = usePacienteStore()
@@ -20,6 +20,30 @@ function onDNIInput(event) {
   event.target.value = valorLimpio
 }
 
+// Función para separar el nombre completo en apellidos y nombres
+function separarNombre(nombreCompleto) {
+  // Dividir el nombre completo por espacios
+  const partes = nombreCompleto.trim().split(' ')
+  
+  // Asignar los componentes (asumiendo formato: APELLIDO_PATERNO APELLIDO_MATERNO NOMBRES)
+  let apePat = ''
+  let apeMat = ''
+  let nombres = ''
+  
+  if (partes.length >= 3) {
+    apePat = partes[0]
+    apeMat = partes[1]
+    nombres = partes.slice(2).join(' ')
+  } else if (partes.length === 2) {
+    apePat = partes[0]
+    nombres = partes[1]
+  } else if (partes.length === 1) {
+    nombres = partes[0]
+  }
+  
+  return { apePat, apeMat, nombres }
+}
+
 async function buscar() {
   try {
     error.value = ''
@@ -31,9 +55,15 @@ async function buscar() {
     buscando.value = true
     const resultado = await store.buscarPaciente(dni.value)
     
-    // Si el paciente existe, llenar automáticamente los campos
-    if (!store.nuevo && resultado) {
-      // Los datos ya se llenan automáticamente en el store
+    // Si el paciente existe, separar el nombre completo
+    if (!store.nuevo && resultado && store.paciente.CNOMBRE) {
+      const { apePat, apeMat, nombres } = separarNombre(store.paciente.CNOMBRE)
+      
+      // Asignar los valores separados al store
+      store.paciente.CAPEPAT = apePat
+      store.paciente.CAPEMAT = apeMat
+      store.paciente.CNOMBRE = nombres
+      
       editandoCelular.value = false
     } else if (store.nuevo) {
       // Si es nuevo, inicializar campos vacíos
@@ -49,6 +79,14 @@ async function buscar() {
 async function guardarPaciente() {
   try {
     error.value = ''
+    
+    // Para pacientes existentes, mantener el nombre completo en CNOMBRE
+    if (!store.nuevo) {
+      // Reconstruir el nombre completo para el backend
+      const nombreCompleto = `${store.paciente.CAPEPAT} ${store.paciente.CAPEMAT} ${store.paciente.CNOMBRE}`.trim()
+      store.paciente.CNOMBRE = nombreCompleto
+    }
+    
     await store.registrarPaciente(store.paciente)
     editandoCelular.value = false
   } catch (e) { 
@@ -73,6 +111,11 @@ const mostrarGuardar = computed(() => {
 // Computed para determinar si el celular es editable
 const celularEditable = computed(() => {
   return store.nuevo || editandoCelular.value
+})
+
+// Computed para determinar si mostrar campos de fecha nacimiento y DNI tratante
+const mostrarCamposAdicionales = computed(() => {
+  return store.nuevo
 })
 </script>
 
@@ -180,40 +223,30 @@ const celularEditable = computed(() => {
           readonly 
         />
 
-        <!-- Fecha de Nacimiento -->
-        <label>FECHA DE NACIMIENTO:</label>
-        <input 
-          v-if="store.nuevo" 
-          class="input" 
-          type="date"
-          v-model="store.paciente.DNACIMI" 
-          placeholder="Seleccione fecha de nacimiento"
-        />
-        <input 
-          v-else 
-          class="input input-readonly" 
-          :value="store.paciente.DNACIMI" 
-          readonly 
-        />
+        <!-- Fecha de Nacimiento (solo para nuevos pacientes) -->
+        <template v-if="mostrarCamposAdicionales">
+          <label>FECHA DE NACIMIENTO:</label>
+          <input 
+            class="input" 
+            type="date"
+            v-model="store.paciente.DNACIMI" 
+            placeholder="Seleccione fecha de nacimiento"
+          />
+        </template>
 
-        <!-- DNI del Estudiante -->
-        <label>DNI DEL TRATANTE:</label>
-        <input 
-          v-if="store.nuevo" 
-          class="input" 
-          v-model="store.paciente.CDNIEST" 
-          @input="store.paciente.CDNIEST = store.paciente.CDNIEST.replace(/\D/g, '').slice(0, 8)"
-          maxlength="8"
-          inputmode="numeric"
-          pattern="[0-9]{8}"
-          placeholder="Ingrese DNI del estudiante"
-        />
-        <input 
-          v-else 
-          class="input input-readonly" 
-          :value="store.paciente.CDNIEST" 
-          readonly 
-        />
+        <!-- DNI del Tratante (solo para nuevos pacientes) -->
+        <template v-if="mostrarCamposAdicionales">
+          <label>DNI DEL TRATANTE:</label>
+          <input 
+            class="input" 
+            v-model="store.paciente.CDNIEST" 
+            @input="store.paciente.CDNIEST = store.paciente.CDNIEST.replace(/\D/g, '').slice(0, 8)"
+            maxlength="8"
+            inputmode="numeric"
+            pattern="[0-9]{8}"
+            placeholder="Ingrese DNI del tratante"
+          />
+        </template>
 
         <!-- Celular con icono de edición -->
         <label>CELULAR DEL PACIENTE:</label>
