@@ -1,17 +1,22 @@
-import tratamientos from '../data/tratamientos.json'
+const API_URL = 'https://transacciones.ucsm.edu.pe/MSERP/MsAplicativos'
 
-export async function buscarArticulo({ CCODART }) {
-  await delay(200)
-  const found = tratamientos.find(t => t.CCODART === CCODART)
-  if (!found) return { ERROR: 'ERROR 01' }
-  return found
+const apiClient = {
+    async post(requestBody) {
+        // ... (misma implementación de apiClient)
+    }
 }
 
-export async function registrarConsumo(paData) {
-  await delay(300)
-  const monto = paData.DATOS.reduce((s, i) => s + i.NPRECIO * i.NCANTID, 0)
-  const CNROPAG = Math.floor(Math.random()*9e9).toString().padStart(10,'0')
-  return { CNROPAG, NMONTO: Number(monto.toFixed(2)) }
+// Registro de consumo (COD1020) - Para implementar después
+export const registrarConsumo = async (payload) => {
+    const requestBody = {
+        ID: 'COD1020',
+        CNRODNI: payload.CNRODNI,
+        AIDCATE: payload.DATOS.map(item => item.CCODART),
+        CDNIALU: payload.CUSUCOD // Asumiendo que CUSUCOD es el DNI del alumno
+    }
+    return await apiClient.post(requestBody)
 }
 
-function delay(ms){ return new Promise(r => setTimeout(r, ms)) }
+export default {
+    registrarConsumo
+}
