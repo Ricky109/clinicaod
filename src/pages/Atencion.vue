@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue"; // ← 1. Eliminar 'computed, watch'
+import { ref } from "vue";
 import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
 
@@ -13,9 +13,9 @@ const buscandoTratamientos = ref(false);
 const errorBusqueda = ref("");
 const opcionesTratamientos = ref([]);
 
-// Función para buscar tratamientos en la UCSM
+// Función para buscar tratamientos
 async function buscarTratamientos(termino) {
-  if (!termino || termino.length < 3) {
+  if (!termino || termino.length < 4) {
     opcionesTratamientos.value = [];
     return;
   }
@@ -25,16 +25,19 @@ async function buscarTratamientos(termino) {
 
   try {
     const tratamientosEncontrados = await store.buscarTratamientosStore(
-      termino, // ← 2. ELIMINAR .toUpperCase().trim()
-      authStore.user.CNRODNI
+      termino,
+      authStore.codigoEstudiante
     );
-
-    opcionesTratamientos.value = resultados.map((t) => ({
-      label: `${t.CDESCRI} (S/ ${t.NPRECIO.toFixed(2)})`,
-      value: t.CIDCATE, // 👈 aquí el ID correcto
-      CDESCRI: t.CDESCRI,
-      NPRECIO: t.NPRECIO,
-    }));
+    if (termino && termino.length >= 4) {
+      opcionesTratamientos.value = tratamientosEncontrados.map((t) => ({
+        label: `${t.CDESCRI} (S/ ${t.NPRECIO.toFixed(2)})`,
+        value: t.CCODART,
+        CDESCRI: t.CDESCRI,
+        NPRECIO: t.NPRECIO,
+      }));
+    } else {
+      opcionesTratamientos.value = [];
+    }
   } catch (error) {
     errorBusqueda.value = "No se encontraron tratamientos";
     opcionesTratamientos.value = [];
@@ -45,9 +48,31 @@ async function buscarTratamientos(termino) {
 
 function agregarTratamiento() {
   if (!tratamientoSeleccionado.value) return;
-  store.cargarTratamientoPorCodigo(tratamientoSeleccionado.value.value);
+  
+  // Crear el objeto tratamiento con los datos del multiselect
+  const tratamiento = {
+    CCODART: tratamientoSeleccionado.value.value,
+    CDESCRI: tratamientoSeleccionado.value.CDESCRI,
+    NPRECIO: tratamientoSeleccionado.value.NPRECIO,
+    NCANTID: 1
+  };
+  
+  // Agregar directamente al store
+  store.agregarTratamiento(tratamiento);
+  
+  // Limpiar selección
   tratamientoSeleccionado.value = null;
   opcionesTratamientos.value = [];
+}
+
+async function grabarYIrAPago() {
+  try {
+    await store.grabarConsumo();
+    // Navegar a pago solo después de que se genere exitosamente
+    window.location.href = '/pago';
+  } catch (e) {
+    alert(e.message);
+  }
 }
 </script>
 
@@ -63,7 +88,11 @@ function agregarTratamiento() {
     <div v-else>
       <p>
         <strong>PACIENTE:</strong>
-        {{ store.paciente.CNOMBRE || store.paciente.CNRODNI }}
+        {{
+          store.paciente.CAPEPAT && store.paciente.CAPEMAT && store.paciente.CNOMBRE
+            ? `${store.paciente.CAPEPAT}, ${store.paciente.CAPEMAT}, ${store.paciente.CNOMBRE}`
+            : (store.paciente.CNOMBRE || store.paciente.CNRODNI)
+        }}
       </p>
 
       <!-- Menú desplegable con buscador -->
@@ -75,7 +104,7 @@ function agregarTratamiento() {
           <Multiselect
             v-model="tratamientoSeleccionado"
             :options="opcionesTratamientos"
-            placeholder="ESCRIBA PARA BUSCAR (mín. 3 caracteres)..."
+            placeholder="ESCRIBA PARA BUSCAR (mín. 4 caracteres)..."
             label="label"
             track-by="value"
             :searchable="true"
@@ -107,7 +136,8 @@ function agregarTratamiento() {
           class="tratamiento-card"
         >
           <div class="tratamiento-header">
-            <strong>{{ it.CDESCRI }}</strong>
+            <!-- Aquí aplicamos la clase para textos largos -->
+            <strong class="tratamiento-descripcion">{{ it.CDESCRI }}</strong>
             <button
               class="btn btn-secondary btn-sm"
               @click="store.quitarTratamiento(it.CCODART)"
@@ -144,16 +174,12 @@ function agregarTratamiento() {
           S/ {{ store.montoTotal.toFixed(2) }}
         </p>
         <div class="flex gap-2">
-          <router-link
+          <button
             class="btn btn-SALIR"
-            to="/pago"
-            @click.prevent="
-              $router.push('/pago');
-              store.grabarConsumo().catch((e) => alert(e.message));
-            "
+            @click="grabarYIrAPago"
           >
             GRABAR
-          </router-link>
+          </button>
         </div>
       </div>
     </div>
@@ -161,7 +187,7 @@ function agregarTratamiento() {
 </template>
 
 <style scoped>
-/* Tus estilos se mantienen igual */
+/* Ajuste para el multiselect */
 .multiselect-wrapper {
   width: 100%;
   max-width: 100%;
@@ -176,23 +202,16 @@ function agregarTratamiento() {
   max-width: 100% !important;
   box-sizing: border-box;
 }
-</style>
 
-<style scoped>
-/* Wrapper para contener el multiselect sin desbordes */
-.multiselect-wrapper {
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-/* Forzar que el multiselect se ajuste al contenedor */
-.multiselect-custom,
-.multiselect,
-.multiselect__input,
-.multiselect__tags {
-  width: 100% !important;
-  max-width: 100% !important;
-  box-sizing: border-box;
+/* Nueva clase para textos largos */
+.tratamiento-descripcion {
+  display: block;
+  max-height: 80px; /* altura máxima visible */
+  overflow-y: auto; /* scroll si se excede */
+  white-space: pre-wrap; /* respeta saltos de línea */
+  word-wrap: break-word; /* corta palabras largas */
+  padding: 4px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 </style>

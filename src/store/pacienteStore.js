@@ -61,9 +61,10 @@ export const usePacienteStore = defineStore("paciente", {
       return res;
     },
 
-    async buscarTratamientosStore(termino, dniAlumno) {
+    async buscarTratamientosStore(termino, codigoEstudiante) {
       try {
-        return await buscarTratamientos(termino, dniAlumno);
+        const auth = useAuthStore();
+        return await buscarTratamientos(termino, codigoEstudiante, auth.user?.CUSUCOD);
       } catch (error) {
         console.error("Error buscando tratamientos:", error);
         throw error;
@@ -88,7 +89,7 @@ export const usePacienteStore = defineStore("paciente", {
       try {
         const tratamientosEncontrados = await this.buscarTratamientosStore(
           CCODART,
-          authStore.user.CNRODNI
+          authStore.codigoEstudiante
         );
 
         const tratamiento = tratamientosEncontrados.find(
@@ -148,20 +149,28 @@ export const usePacienteStore = defineStore("paciente", {
       if (!this.paciente) throw new Error("Paciente no definido");
       if (this.tratamientos.length === 0)
         throw new Error("Seleccione al menos un tratamiento");
+      
       const payload = {
         CNRODNI: this.paciente.CNRODNI,
-        CUSUCOD: auth.user?.CUSUCOD,
+        CDNIALU: auth.codigoEstudiante, // Código del estudiante
         DATOS: this.tratamientos.map((t) => ({
           CCODART: t.CCODART,
           NCANTID: t.NCANTID,
           NPRECIO: t.NPRECIO,
         })),
       };
+      
+      console.log('Grabando consumo con payload:', payload);
       const res = await consumoService.registrarConsumo(payload);
+      
       if (res.ERROR) throw new Error(res.ERROR);
-      this.nroPago = res.CNROPAG;
-      this.montoTotal = res.NMONTO;
+      
+      // Asignar los datos del pago generado
+      this.nroPago = res.CNROPAG || res.nroPago;
+      this.montoTotal = res.NMONTO || res.monto || this.montoTotal;
       this.estadoPago = "PENDIENTE";
+      
+      console.log('Pago generado:', { nroPago: this.nroPago, monto: this.montoTotal });
       return res;
     },
 

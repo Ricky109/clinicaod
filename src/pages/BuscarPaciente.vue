@@ -159,13 +159,13 @@ const mostrarCamposAdicionales = computed(() => {
         />
 
         <!-- Apellido Paterno -->
-        <label>APELLIDO PATERNO:</label>
+        <label>PRIMER APELLIDO:</label>
         <input 
           v-if="store.nuevo" 
           class="input" 
           v-model="store.paciente.CAPEPAT" 
           @input="store.paciente.CAPEPAT = store.paciente.CAPEPAT.toUpperCase()" 
-          placeholder="Ingrese apellido paterno"
+          placeholder="INGRESE PRIMER APELLIDO"
         />
         <input 
           v-else 
@@ -175,13 +175,13 @@ const mostrarCamposAdicionales = computed(() => {
         />
 
         <!-- Apellido Materno -->
-        <label>APELLIDO MATERNO:</label>
+        <label>SEGUNDO APELLIDO:</label>
         <input 
           v-if="store.nuevo" 
           class="input" 
           v-model="store.paciente.CAPEMAT" 
           @input="store.paciente.CAPEMAT = store.paciente.CAPEMAT.toUpperCase()" 
-          placeholder="Ingrese apellido materno"
+          placeholder="INGRESE SEGUNDO APELLIDO"
         />
         <input 
           v-else 
@@ -197,7 +197,7 @@ const mostrarCamposAdicionales = computed(() => {
           class="input" 
           v-model="store.paciente.CNOMBRE" 
           @input="store.paciente.CNOMBRE = store.paciente.CNOMBRE.toUpperCase()" 
-          placeholder="Ingrese nombres"
+          placeholder="INGRESE NOMBRES"
         />
         <input 
           v-else 
@@ -244,7 +244,7 @@ const mostrarCamposAdicionales = computed(() => {
             maxlength="8"
             inputmode="numeric"
             pattern="[0-9]{8}"
-            placeholder="Ingrese DNI del tratante"
+            placeholder="INGRESE DNI DEL TRATANTE"
           />
         </template>
 
@@ -260,7 +260,7 @@ const mostrarCamposAdicionales = computed(() => {
             inputmode="numeric"
             pattern="[0-9]{9}"
             :readonly="!celularEditable"
-            placeholder="Ingrese número de celular"
+            placeholder="INGRESE NÚMERO DE CELULAR"
           />
           <button 
             v-if="!store.nuevo && !editandoCelular" 

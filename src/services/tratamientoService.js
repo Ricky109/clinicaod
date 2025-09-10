@@ -25,11 +25,11 @@ const apiClient = {
 };
 
 // 🔎 Búsqueda de tratamientos (API0007)
-export const buscarTratamientos = async (terminoBusqueda, dniAlumno) => {
+export const buscarTratamientos = async (terminoBusqueda, codigoEstudiante, usuarioCodigo) => {
   const requestBody = {
     ID: "API0007",
-    CDNIALU: dniAlumno,
-    CUSUCOD: "U666",
+    CDNIALU: codigoEstudiante,
+    CUSUCOD: usuarioCodigo || "U666",
     CPARAM: terminoBusqueda,
   };
 
