@@ -8,8 +8,8 @@ export const useAuthStore = defineStore('auth', {
   }),
   getters: {
     isLogged: (s) => !!s.user,
-    // Getter para obtener el CDNIALU como identificador principal
-    codigoEstudiante: (s) => s.user?.CDNIALU || s.user?.CCODALU || null
+    // ✅ CORRECCIÓN: Usar CDNIEST en lugar de CDNIALU
+    codigoEstudiante: (s) => s.user?.CDNIEST || null
   },
   actions: {
     async login(paData) {

@@ -30,7 +30,7 @@ export const registrarConsumo = async (payload) => {
         ID: 'COD1020',
         CNRODNI: payload.CNRODNI,
         AIDCATE: payload.DATOS.map(item => item.CCODART),
-        CDNIALU: payload.CDNIALU // Código del estudiante
+        CDNIALU: payload.CDNIALU 
     }
     
     console.log('Enviando a API COD1020:', requestBody)

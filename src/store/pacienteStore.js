@@ -64,7 +64,11 @@ export const usePacienteStore = defineStore("paciente", {
     async buscarTratamientosStore(termino, codigoEstudiante) {
       try {
         const auth = useAuthStore();
-        return await buscarTratamientos(termino, codigoEstudiante, auth.user?.CUSUCOD);
+        return await buscarTratamientos(
+          termino,
+          codigoEstudiante,
+          auth.user?.CUSUCOD
+        );
       } catch (error) {
         console.error("Error buscando tratamientos:", error);
         throw error;
@@ -82,40 +86,6 @@ export const usePacienteStore = defineStore("paciente", {
         this.tratamientos.push({ ...tratamiento, NCANTID: 1 });
       }
       this.actualizarMontoTotal();
-    },
-
-    async cargarTratamientoPorCodigo(CCODART) {
-      const authStore = useAuthStore();
-      try {
-        const tratamientosEncontrados = await this.buscarTratamientosStore(
-          CCODART,
-          authStore.codigoEstudiante
-        );
-
-        const tratamiento = tratamientosEncontrados.find(
-          (t) => t.CCODART === CCODART
-        );
-        if (!tratamiento) throw new Error("Tratamiento no encontrado");
-
-        const idx = this.tratamientos.findIndex(
-          (t) => t.CCODART === tratamiento.CCODART
-        );
-        if (idx >= 0) {
-          this.tratamientos[idx].NCANTID += 1;
-        } else {
-          this.tratamientos.push({ ...tratamiento, NCANTID: 1 });
-        }
-
-        this.montoTotal = this.tratamientos.reduce(
-          (acc, t) => acc + t.NPRECIO * t.NCANTID,
-          0
-        );
-
-        return tratamiento;
-      } catch (error) {
-        console.error("Error cargando tratamiento:", error);
-        throw new Error(error.message || "Error al cargar el tratamiento");
-      }
     },
 
     actualizarMontoTotal() {
@@ -149,28 +119,30 @@ export const usePacienteStore = defineStore("paciente", {
       if (!this.paciente) throw new Error("Paciente no definido");
       if (this.tratamientos.length === 0)
         throw new Error("Seleccione al menos un tratamiento");
-      
+
       const payload = {
-        CNRODNI: this.paciente.CNRODNI,
-        CDNIALU: auth.codigoEstudiante, // Código del estudiante
+        CNRODNI: this.paciente.CNRODNI, // DNI del PACIENTE
+        CDNIALU: auth.user.CDNIEST, // ← DNI del ALUMNO (logueado) - CORREGIDO
         DATOS: this.tratamientos.map((t) => ({
           CCODART: t.CCODART,
           NCANTID: t.NCANTID,
           NPRECIO: t.NPRECIO,
         })),
       };
-      
-      console.log('Grabando consumo con payload:', payload);
+
+      console.log("Grabando consumo con payload:", payload);
       const res = await consumoService.registrarConsumo(payload);
-      
+
       if (res.ERROR) throw new Error(res.ERROR);
-      
-      // Asignar los datos del pago generado
-      this.nroPago = res.CNROPAG || res.nroPago;
-      this.montoTotal = res.NMONTO || res.monto || this.montoTotal;
+
+      this.nroPago = res.CNROPAG;
+      this.montoTotal = res.NMONTO;
       this.estadoPago = "PENDIENTE";
-      
-      console.log('Pago generado:', { nroPago: this.nroPago, monto: this.montoTotal });
+
+      console.log("Pago generado:", {
+        nroPago: this.nroPago,
+        monto: this.montoTotal,
+      });
       return res;
     },
 
