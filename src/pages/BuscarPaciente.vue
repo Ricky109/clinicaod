@@ -87,6 +87,11 @@ async function guardarPaciente() {
       store.paciente.CNOMBRE = nombreCompleto
     }
     
+    // Ajustar formato de fecha para API: de YYYY-MM-DD a YYYY/MM/DD
+    if (store.paciente.DNACIMI) {
+      store.paciente.DNACIMI = String(store.paciente.DNACIMI).replace(/-/g, '/')
+    }
+    
     await store.registrarPaciente(store.paciente)
     editandoCelular.value = false
   } catch (e) { 
@@ -225,12 +230,12 @@ const mostrarCamposAdicionales = computed(() => {
 
         <!-- Fecha de Nacimiento (solo para nuevos pacientes) -->
         <template v-if="mostrarCamposAdicionales">
-          <label>FECHA DE NACIMIENTO:</label>
+          <label>FECHA DE NACIMIENTO: (AAAA/MM/DD)</label>
           <input 
             class="input" 
             type="date"
             v-model="store.paciente.DNACIMI" 
-            placeholder="Seleccione fecha de nacimiento"
+            placeholder="AAAA/MM/DD"
           />
         </template>
 

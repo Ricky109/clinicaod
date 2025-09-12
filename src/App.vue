@@ -5,7 +5,7 @@
       <div class="sidebar-content">
         <div class="sidebar-buttons">
           <router-link class="btn btn-SALIR" to="/home" @click="toggleSidebar">INICIO</router-link>
-          <button class="btn btn-SALIR" @click="onLogout">SALIR</button>
+          <button class="btn btn-SALIR btn-logout" @click="onLogout">SALIR</button>
         </div>
       </div>
     </aside>

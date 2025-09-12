@@ -65,11 +65,11 @@ function agregarTratamiento() {
   opcionesTratamientos.value = [];
 }
 
-async function grabarYIrAPago() {
+async function grabarYIrHistorial() {
   try {
     await store.grabarConsumo();
-    // Navegar a pago solo después de que se genere exitosamente
-    window.location.href = '/pago';
+    // Redirigir a historial luego de generar la deuda
+    window.location.href = '/historial';
   } catch (e) {
     alert(e.message);
   }
@@ -176,7 +176,7 @@ async function grabarYIrAPago() {
         <div class="flex gap-2">
           <button
             class="btn btn-SALIR"
-            @click="grabarYIrAPago"
+            @click="grabarYIrHistorial"
           >
             GRABAR
           </button>
