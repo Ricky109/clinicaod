@@ -224,7 +224,7 @@ const mostrarCamposAdicionales = computed(() => {
         <input 
           v-else 
           class="input input-readonly" 
-          :value="store.paciente.CSEXO === 'M' ? 'MASCULINO' : 'FEMENINO'" 
+          :value="store.paciente.CSEXO ? (store.paciente.CSEXO === 'M' ? 'MASCULINO' : store.paciente.CSEXO === 'F' ? 'FEMENINO' : store.paciente.CSEXO) : ''" 
           readonly 
         />
 

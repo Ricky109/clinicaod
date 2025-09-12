@@ -1,11 +1,25 @@
 <script setup>
+import { ref } from 'vue'
 import { usePacienteStore } from '../store/pacienteStore'
+import { useRouter } from 'vue-router'
+
 const store = usePacienteStore()
+const router = useRouter()
+const refrescando = ref(false)
 
 async function refrescar() {
   try {
+    refrescando.value = true
     await store.verificarPago()
-  } catch (e) { alert(e.message) }
+  } catch (e) { 
+    alert(e.message) 
+  } finally {
+    refrescando.value = false
+  }
+}
+
+function volverAtencion() {
+  router.push('/atencion')
 }
 
 function getEstadoIcon(estado) {
@@ -26,8 +40,13 @@ function getEstadoIcon(estado) {
   <div class="card">
     <h2 style="text-align: center;">PAGO</h2>
     
-    <div v-if="!store.nroPago">
-      <p>NO HAY PAGO GENERADO. VUELVA A <router-link class="link" to="/atencion">ATENCIÓN</router-link>.</p>
+    <div v-if="!store.nroPago || store.nroPago === null || store.nroPago === ''">
+      <div class="no-pago-message">
+        <p><strong>NO HAY PAGO GENERADO. VUELVA A ATENCIÓN.</strong></p>
+        <button class="btn btn-primary" @click="volverAtencion">
+          VOLVER A ATENCIÓN
+        </button>
+      </div>
     </div>
     <div v-else>
       <p><strong>NRO DE PAGO:</strong> {{ store.nroPago }}</p>
@@ -45,9 +64,36 @@ function getEstadoIcon(estado) {
       </div>
 
       <div class="mt-2" style="text-align:center;">
-        <button class="btn btn-secondary" @click="refrescar">REFRESCAR</button>
+        <button 
+          class="btn btn-secondary" 
+          @click="refrescar"
+          :disabled="refrescando"
+        >
+          {{ refrescando ? 'REFRESCANDO...' : 'REFRESCAR' }}
+        </button>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.no-pago-message {
+  text-align: center;
+  padding: 2rem;
+  background: #fee2e2;
+  border-radius: 8px;
+  border: 1px solid #fca5a5;
+  margin: 1rem 0;
+}
+
+.no-pago-message p {
+  color: #b91c1c;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.no-pago-message .btn {
+  margin-top: 0.5rem;
+}
+</style>
 

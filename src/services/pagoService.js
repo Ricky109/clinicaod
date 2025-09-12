@@ -1,65 +1,101 @@
-// VERIFICAR PAGO
-let pagosConfirmados = new Set()
-
+// VERIFICAR PAGO - API Real
 export async function verificar(paData) {
-  await delay(500)
-  const id = paData.CNROPAG
-  if (pagosConfirmados.has(id)) return { OK: 'OK' }
-  // 50% de probabilidad de estar pagado en refresco
-  if (Math.random() > 0.5) { pagosConfirmados.add(id); return { OK: 'OK' } }
-  return { ERROR: 'ERROR 9' }
+  const API_URL = 'https://transacciones.ucsm.edu.pe/MSERP/MsAplicativos'
+  
+  try {
+    const request = {
+      "ID": "COD1022", // API para verificar estado de pago
+      "CNROPAG": paData.CNROPAG
+    }
+    
+    console.log('Verificando pago con:', request)
+    
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request)
+    })
+
+    if (!response.ok) {
+      throw new Error('Error de conexión con el servidor')
+    }
+
+    const data = await response.json()
+    
+    if (data.ERROR) {
+      throw new Error(data.ERROR)
+    }
+
+    console.log('Respuesta de verificación de pago:', data)
+    
+    // La API devuelve el estado actual del pago
+    return {
+      OK: data.CESTADO === 'C' ? 'OK' : 'PENDIENTE',
+      ESTADO: data.CESTADO,
+      DESCRIPCION: data.CDESEST
+    }
+    
+  } catch (error) {
+    console.error('Error verificando pago:', error)
+    throw error
+  }
 }
 
 // HISTORIAL DE PACIENTES ATENDIDOS - API COD1021
-export async function historialPacientesAtendidos(codigoEstudiante) {
-  await delay(300)
+export async function historialPacientesAtendidos(codigoEstudiante, fecha = null) {
+  const API_URL = 'https://transacciones.ucsm.edu.pe/MSERP/MsAplicativos'
   
-  // Simulación de llamada a API COD1021
-  const request = {
-    "ID": "COD1021",
-    "CDNIALU": codigoEstudiante
-  }
-  
-  console.log('Llamando API COD1021 con:', request)
-  
-  // Mock de respuesta de la API - usar el código del usuario logueado
-  const historialCompleto = [
-    { 
-      codigo: '1058423102', 
-      paciente: 'ALOSILLA MORENO SANCHEZ LLIGUERMO', 
-      monto: 120.50, 
-      estado: 'PAGADO', 
-      fecha: '2024-01-15',
-      codigoEstudiante: codigoEstudiante 
-    },
-    { 
-      codigo: '1058423103', 
-      paciente: 'ROSAS GUEVARA VICTOR JOSE', 
-      monto: 85.00, 
-      estado: 'PENDIENTE', 
-      fecha: '2024-01-14',
-      codigoEstudiante: codigoEstudiante 
-    },
-    { 
-      codigo: '1058423104', 
-      paciente: 'GARCIA LOPEZ MARIA ELENA', 
-      monto: 200.00, 
-      estado: 'PAGADO', 
-      fecha: '2024-01-13',
-      codigoEstudiante: codigoEstudiante 
-    },
-    { 
-      codigo: '1058423105', 
-      paciente: 'MARTINEZ RODRIGUEZ CARLOS', 
-      monto: 75.50, 
-      estado: 'ANULADO', 
-      fecha: '2024-01-12',
-      codigoEstudiante: codigoEstudiante 
+  try {
+    // La API COD1021 busca por el DNI del estudiante que generó los pagos
+    // No por el DNI del paciente atendido
+    // Usar fecha proporcionada o fecha actual
+    const fechaFormateada = fecha || new Date().toISOString().split('T')[0] // Formato YYYY-MM-DD
+    
+    const request = {
+      "ID": "COD1021",
+      "CNRODNI": codigoEstudiante, // DNI del estudiante logueado
+      "DFECHA": fechaFormateada // Fecha proporcionada o actual
     }
-  ]
-  
-  // Filtrar por código de estudiante
-  return historialCompleto.filter(pago => pago.codigoEstudiante === codigoEstudiante)
+    
+    console.log('Llamando API COD1021 con:', request)
+    
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request)
+    })
+
+    if (!response.ok) {
+      throw new Error('Error de conexión con el servidor')
+    }
+
+    const data = await response.json()
+    
+    if (data.ERROR) {
+      throw new Error(data.ERROR)
+    }
+
+    console.log('Respuesta de API COD1021:', data)
+    
+    // Transformar los datos de la API al formato esperado por el componente
+    return data.map(item => ({
+      paciente: item.CNOMBRE,
+      dni: item.CNRODNI,
+      codigo: item.CNROPAG,
+      monto: item.NMONTO,
+      estado: item.CESTADO,
+      estadoDesc: item.CDESEST,
+      fecha: item.TREGIS
+    }))
+    
+  } catch (error) {
+    console.error('Error en historialPacientesAtendidos:', error)
+    throw error
+  }
 }
 
 // Función legacy mantenida para compatibilidad

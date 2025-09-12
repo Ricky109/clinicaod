@@ -17,22 +17,24 @@ async function cargarHistorialPacientes() {
     cargando.value = true
     error.value = ''
     
-    // Obtener el código de estudiante del usuario autenticado
-    // Usar CDNIALU como identificador principal (devuelto por la API de login)
-    const codigoEstudiante = auth.codigoEstudiante
+    // Obtener el DNI del estudiante logueado para buscar sus pagos generados
+    // La API COD1021 busca por el DNI del estudiante que generó los pagos
+    const dniEstudiante = auth.user?.CNRODOC
     
-    if (!codigoEstudiante) {
-      error.value = 'No se encontró el código de estudiante'
+    if (!dniEstudiante) {
+      error.value = 'No se encontró el DNI del estudiante'
       return
     }
     
     console.log('Usuario autenticado completo:', auth.user)
-    console.log('CDNIALU (identificador principal):', auth.user?.CDNIALU)
-    console.log('CCODALU (alternativo):', auth.user?.CCODALU)
-    console.log('Código de estudiante seleccionado:', codigoEstudiante)
+    console.log('CNRODOC (DNI del estudiante):', auth.user?.CNRODOC)
+    console.log('DNI del estudiante para historial:', dniEstudiante)
     
-    // Llamar a la API COD1021
-    items.value = await pagoService.historialPacientesAtendidos(codigoEstudiante)
+    // Llamar a la API COD1021 - no se almacena nada localmente
+    const historialData = await pagoService.historialPacientesAtendidos(dniEstudiante)
+    
+    // Asignar directamente los datos de la API sin persistir
+    items.value = historialData
     console.log('Pacientes atendidos encontrados:', items.value)
     
   } catch (e) {
@@ -44,26 +46,50 @@ async function cargarHistorialPacientes() {
 }
 
 function getEstadoIcon(estado) {
-  switch (estado.toLowerCase()) {
-    case 'pagado':
-      return { icon: '✔️', class: 'estado-pagado' }
-    case 'pendiente':
-      return { icon: '⏳', class: 'estado-pendiente' }
-    case 'anulado':
-      return { icon: '❌', class: 'estado-anulado' }
+  switch (estado) {
+    case 'C': // PAGADO
+      return { icon: '✔️', class: 'estado-pagado', texto: 'PAGADO' }
+    case 'A': // PENDIENTE DE PAGO
+      return { icon: '⏳', class: 'estado-pendiente', texto: 'PENDIENTE DE PAGO' }
+    case 'X': // ANULADO
+      return { icon: '❌', class: 'estado-anulado', texto: 'ANULADO' }
+    case 'F': // FACTURADO
+      return { icon: '📄', class: 'estado-facturado', texto: 'FACTURADO' }
     default:
-      return { icon: '❔', class: 'estado-desconocido' }
+      return { icon: '❔', class: 'estado-desconocido', texto: 'DESCONOCIDO' }
   }
+}
+
+function descargarDetalles(codigoPago) {
+  // Aquí se implementaría la lógica para descargar los detalles del pago facturado
+  // Por ahora, simulamos la descarga
+  const url = `https://transacciones.ucsm.edu.pe/descargas/${codigoPago}.pdf`
+  window.open(url, '_blank')
 }
 
 function formatearFecha(fecha) {
   if (!fecha) return 'No disponible'
-  const fechaObj = new Date(fecha)
-  return fechaObj.toLocaleDateString('es-ES', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
+  
+  try {
+    // La API devuelve formato: '2025-09-10 03:09'
+    const fechaObj = new Date(fecha)
+    
+    // Verificar si la fecha es válida
+    if (isNaN(fechaObj.getTime())) {
+      return fecha // Devolver la fecha original si no se puede parsear
+    }
+    
+    return fechaObj.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch (error) {
+    console.error('Error formateando fecha:', error)
+    return fecha // Devolver la fecha original en caso de error
+  }
 }
 </script>
 
@@ -85,7 +111,7 @@ function formatearFecha(fecha) {
     <div v-else class="historial-container">
       <div v-if="items.length === 0" class="no-pacientes">
         <p>NO HAY PACIENTES ATENDIDOS POR ESTE ESTUDIANTE</p>
-        <p>CÓDIGO DE ESTUDIANTE: {{ auth.codigoEstudiante || 'NO DISPONIBLE' }}</p>
+        <p>DNI DEL ESTUDIANTE: {{ auth.user?.CNRODOC || 'NO DISPONIBLE' }}</p>
       </div>
       
       <div 
@@ -97,6 +123,9 @@ function formatearFecha(fecha) {
           <strong>PACIENTE:</strong> <span>{{ it.paciente }}</span>
         </div>
         <div class="historial-row">
+          <strong>DNI:</strong> <span>{{ it.dni }}</span>
+        </div>
+        <div class="historial-row">
           <strong>NÚMERO DE PAGO:</strong> <span>{{ it.codigo }}</span>
         </div>
         <div class="historial-row">
@@ -104,9 +133,20 @@ function formatearFecha(fecha) {
         </div>
         <div class="historial-row">
           <strong>ESTADO:</strong>
-          <span :class="['estado-icon', getEstadoIcon(it.estado).class]">
-            {{ getEstadoIcon(it.estado).icon }}
-          </span>
+          <div class="estado-container">
+            <span :class="['estado-icon', getEstadoIcon(it.estado).class]">
+              {{ getEstadoIcon(it.estado).icon }}
+            </span>
+            <span class="estado-texto">{{ getEstadoIcon(it.estado).texto }}</span>
+            <button 
+              v-if="it.estado === 'F'" 
+              class="btn-descargar"
+              @click="descargarDetalles(it.codigo)"
+              title="Descargar detalles del pago facturado"
+            >
+              📥 DESCARGAR
+            </button>
+          </div>
         </div>
         <div class="historial-row">
           <strong>FECHA:</strong> <span>{{ formatearFecha(it.fecha) }}</span>
@@ -185,8 +225,36 @@ function formatearFecha(fecha) {
   font-weight: bold;
 }
 
+.estado-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.estado-texto {
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
 .estado-pagado { color: green; }
 .estado-pendiente { color: orange; }
 .estado-anulado { color: red; }
+.estado-facturado { color: #3b82f6; }
 .estado-desconocido { color: gray; }
+
+.btn-descargar {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-descargar:hover {
+  background: #2563eb;
+}
 </style>

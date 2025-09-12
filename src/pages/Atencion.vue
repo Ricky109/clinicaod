@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from "vue";
+import { useRouter } from "vue-router";
 import Multiselect from "vue-multiselect";
 import "vue-multiselect/dist/vue-multiselect.css";
 
@@ -8,6 +9,7 @@ import { useAuthStore } from "../store/authStore";
 
 const store = usePacienteStore();
 const authStore = useAuthStore();
+const router = useRouter();
 const tratamientoSeleccionado = ref(null);
 const buscandoTratamientos = ref(false);
 const errorBusqueda = ref("");
@@ -65,11 +67,16 @@ function agregarTratamiento() {
   opcionesTratamientos.value = [];
 }
 
-async function grabarYIrAPago() {  // ← Cambia el nombre
+async function grabarYIrAPago() {
   try {
-    await store.grabarConsumo();
-    // Redirigir a PAGO en lugar de HISTORIAL
-    window.location.href = '/pago';  // ← Cambia la ruta
+    // Llamar al método del store que envía los tratamientos a la API
+    const respuesta = await store.grabarConsumo();
+    
+    // La respuesta de la API contiene NROPAGO y ESTADO
+    console.log('Respuesta de la API:', respuesta);
+    
+    // Navegar a /pago usando router.push
+    router.push('/pago');
   } catch (e) {
     alert(e.message);
   }

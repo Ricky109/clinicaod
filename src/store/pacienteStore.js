@@ -42,7 +42,7 @@ export const usePacienteStore = defineStore("paciente", {
           CAPEMAT: res.CAPEMAT || "",
           CNOMBRE: res.CNOMBRE || "",
           CNROCEL: res.CNROCEL || "",
-          CSEXO: res.CSEXO || "M",
+          CSEXO: res.CSEXO || "", // Dejar vacío si no viene de la API
           DNACIMI: res.DNACIMI || "",
           CDNIEST: res.CDNIEST || "",
         };
@@ -122,7 +122,7 @@ export const usePacienteStore = defineStore("paciente", {
 
       const payload = {
         CNRODNI: this.paciente.CNRODNI, // DNI del PACIENTE
-        CDNIALU: auth.user.CDNIEST, // ← DNI del ALUMNO (logueado) - CORREGIDO
+        CDNIALU: auth.user.CDNIEST, // DNI del ALUMNO (logueado)
         DATOS: this.tratamientos.map((t) => ({
           CCODART: t.CCODART,
           NCANTID: t.NCANTID,
@@ -135,21 +135,45 @@ export const usePacienteStore = defineStore("paciente", {
 
       if (res.ERROR) throw new Error(res.ERROR);
 
+      // Actualizar el estado del store con la respuesta de la API
       this.nroPago = res.CNROPAG;
       this.montoTotal = res.NMONTO;
-      this.estadoPago = "PENDIENTE";
+      this.estadoPago = res.ESTADO || "PENDIENTE";
 
       console.log("Pago generado:", {
         nroPago: this.nroPago,
         monto: this.montoTotal,
+        estado: this.estadoPago,
       });
+      
+      // Retornar directamente la respuesta de la API
       return res;
     },
 
     async verificarPago() {
       if (!this.nroPago) throw new Error("No hay pago a verificar");
       const res = await pagoService.verificar({ CNROPAG: this.nroPago });
-      if (res.OK === "OK") this.estadoPago = "PAGADO";
+      
+      // Actualizar el estado del pago con la respuesta de la API
+      if (res.ESTADO) {
+        switch (res.ESTADO) {
+          case 'C':
+            this.estadoPago = "PAGADO";
+            break;
+          case 'A':
+            this.estadoPago = "PENDIENTE";
+            break;
+          case 'X':
+            this.estadoPago = "ANULADO";
+            break;
+          case 'F':
+            this.estadoPago = "FACTURADO";
+            break;
+          default:
+            this.estadoPago = "PENDIENTE";
+        }
+      }
+      
       return res;
     },
   },
