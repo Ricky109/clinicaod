@@ -142,8 +142,8 @@ const mostrarCamposAdicionales = computed(() => {
       
       <!-- Botón Buscar -->
       <div style="text-align:center;">
-        <button class="btn btn-SALIR" @click="buscar" :disabled="buscando || dni.length !== 8">
-          {{ buscando ? 'BUSCANDO...' : 'BUSCAR' }}
+        <button class="btn btn-primary btn-buscar" @click="buscar" :disabled="buscando || dni.length !== 8">
+          {{ buscando ? '🔍 Buscando...' : '🔍 Buscar' }}
         </button>
       </div>
     </div>
@@ -230,12 +230,12 @@ const mostrarCamposAdicionales = computed(() => {
 
         <!-- Fecha de Nacimiento (solo para nuevos pacientes) -->
         <template v-if="mostrarCamposAdicionales">
-          <label>FECHA DE NACIMIENTO: (AAAA/MM/DD)</label>
+          <label>FECHA DE NACIMIENTO: (DD/MM/AAAA)</label>
           <input 
             class="input" 
             type="date"
             v-model="store.paciente.DNACIMI" 
-            placeholder="AAAA/MM/DD"
+            placeholder="DD/MM/AAAA"
           />
         </template>
 
@@ -285,14 +285,14 @@ const mostrarCamposAdicionales = computed(() => {
       <div class="mt-2 button-group">
         <button 
           v-if="mostrarGuardar" 
-          class="btn btn-primary" 
+          class="btn btn-primary btn-buscar" 
           @click="guardarPaciente"
         >
-          {{ store.nuevo ? 'REGISTRAR PACIENTE' : 'GUARDAR CAMBIOS' }}
+          {{ store.nuevo ? '👤 Registrar Paciente' : '💾 Guardar Cambios' }}
         </button>
         
-        <router-link class="btn btn-SALIR" to="/atencion">
-          TRATAMIENTO
+        <router-link class="btn btn-primary btn-buscar" to="/atencion">
+          🏥 Tratamiento
         </router-link>
       </div>
     </div>

@@ -8,18 +8,26 @@ const items = ref([])
 const cargando = ref(false)
 const error = ref('')
 
+// Variables para filtros de fecha
+const filtroDesde = ref('')
+const filtroHasta = ref('')
+
 onMounted(async () => {
+  // Establecer fecha por defecto (fecha actual)
+  const fechaActual = new Date()
+  filtroDesde.value = fechaActual.toISOString().split('T')[0]
+  
   await cargarHistorialPacientes()
 })
 
-async function cargarHistorialPacientes() {
+async function cargarHistorialPacientes(fechaEspecifica = null) {
   try {
     cargando.value = true
     error.value = ''
     
     // Obtener el DNI del estudiante logueado para buscar sus pagos generados
     // La API COD1021 busca por el DNI del estudiante que generó los pagos
-    const dniEstudiante = auth.user?.CNRODOC
+    const dniEstudiante = auth.user?.CDNIEST
     
     if (!dniEstudiante) {
       error.value = 'No se encontró el DNI del estudiante'
@@ -27,11 +35,30 @@ async function cargarHistorialPacientes() {
     }
     
     console.log('Usuario autenticado completo:', auth.user)
-    console.log('CNRODOC (DNI del estudiante):', auth.user?.CNRODOC)
+    console.log('CDNIEST (DNI del estudiante):', auth.user?.CDNIEST)
     console.log('DNI del estudiante para historial:', dniEstudiante)
     
-    // Llamar a la API COD1021 - no se almacena nada localmente
-    const historialData = await pagoService.historialPacientesAtendidos(dniEstudiante)
+    let fechaParaAPI = null
+    
+    if (fechaEspecifica) {
+      // Si se especifica una fecha (como "2000-01-01" para mostrar todo)
+      fechaParaAPI = fechaEspecifica
+    } else if (filtroDesde.value && filtroHasta.value) {
+      // Si hay rango de fechas, usar la fecha desde
+      fechaParaAPI = filtroDesde.value
+    } else if (filtroDesde.value) {
+      // Si solo hay fecha desde, usar esa
+      fechaParaAPI = filtroDesde.value
+    } else {
+      // Por defecto, usar fecha actual
+      const fechaActual = new Date()
+      fechaParaAPI = fechaActual.toISOString().split('T')[0]
+    }
+    
+    console.log('Fecha para API:', fechaParaAPI)
+    
+    // Llamar a la API COD1021 con la fecha específica
+    const historialData = await pagoService.historialPacientesAtendidos(dniEstudiante, fechaParaAPI)
     
     // Asignar directamente los datos de la API sin persistir
     items.value = historialData
@@ -43,6 +70,111 @@ async function cargarHistorialPacientes() {
   } finally {
     cargando.value = false
   }
+}
+
+// Función para buscar con filtros de fecha (rango de fechas)
+async function buscarConFiltros() {
+  try {
+    cargando.value = true
+    error.value = ''
+    
+    // Obtener el DNI del estudiante logueado
+    const dniEstudiante = auth.user?.CDNIEST
+    
+    if (!dniEstudiante) {
+      error.value = 'No se encontró el DNI del estudiante'
+      return
+    }
+    
+    let fechasParaConsultar = []
+    
+    if (filtroDesde.value && filtroHasta.value) {
+      // Si hay rango de fechas, generar todas las fechas entre desde y hasta
+      fechasParaConsultar = generarRangoFechas(filtroDesde.value, filtroHasta.value)
+    } else if (filtroDesde.value) {
+      // Si solo hay fecha desde, usar esa fecha
+      fechasParaConsultar = [filtroDesde.value]
+    } else {
+      // Por defecto, usar fecha actual
+      const fechaActual = new Date()
+      fechasParaConsultar = [fechaActual.toISOString().split('T')[0]]
+    }
+    
+    console.log('Fechas a consultar:', fechasParaConsultar)
+    
+    // Hacer peticiones para cada fecha y combinar resultados
+    const todosLosResultados = []
+    
+    for (const fecha of fechasParaConsultar) {
+      try {
+        console.log(`Consultando fecha: ${fecha}`)
+        const historialData = await pagoService.historialPacientesAtendidos(dniEstudiante, fecha)
+        if (historialData && historialData.length > 0) {
+          todosLosResultados.push(...historialData)
+        }
+      } catch (error) {
+        console.warn(`Error consultando fecha ${fecha}:`, error)
+        // Continuar con las demás fechas aunque una falle
+      }
+    }
+    
+    // Eliminar duplicados basándose en el código de pago
+    const resultadosUnicos = eliminarDuplicados(todosLosResultados)
+    
+    items.value = resultadosUnicos
+    console.log('Total de pacientes encontrados:', items.value.length)
+    
+  } catch (e) {
+    error.value = e.message || 'Error al cargar el historial de pacientes'
+    console.error('Error:', e)
+  } finally {
+    cargando.value = false
+  }
+}
+
+// Función para generar rango de fechas entre dos fechas
+function generarRangoFechas(fechaInicio, fechaFin) {
+  const fechas = []
+  const inicio = new Date(fechaInicio)
+  const fin = new Date(fechaFin)
+  
+  // Asegurar que la fecha de inicio no sea mayor que la de fin
+  if (inicio > fin) {
+    [inicio, fin] = [fin, inicio]
+  }
+  
+  const fechaActual = new Date(inicio)
+  
+  while (fechaActual <= fin) {
+    fechas.push(fechaActual.toISOString().split('T')[0])
+    fechaActual.setDate(fechaActual.getDate() + 1)
+  }
+  
+  return fechas
+}
+
+// Función para eliminar duplicados basándose en el código de pago
+function eliminarDuplicados(resultados) {
+  const unicos = new Map()
+  
+  resultados.forEach(item => {
+    const clave = item.codigo || item.CNROPAG
+    if (clave && !unicos.has(clave)) {
+      unicos.set(clave, item)
+    }
+  })
+  
+  return Array.from(unicos.values())
+}
+
+// Función para limpiar filtros y mostrar fecha actual
+async function limpiarFiltros() {
+  // Limpiar los inputs de fecha
+  filtroDesde.value = ''
+  filtroHasta.value = ''
+  
+  // Limpiar la lista de pacientes
+  items.value = []
 }
 
 function getEstadoIcon(estado) {
@@ -79,13 +211,11 @@ function formatearFecha(fecha) {
       return fecha // Devolver la fecha original si no se puede parsear
     }
     
-    return fechaObj.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
+    // Formato: Año, Mes, Día (YYYY-MM-DD)
+    const año = fechaObj.getFullYear()
+    const mes = String(fechaObj.getMonth() + 1).padStart(2, '0')
+    const dia = String(fechaObj.getDate()).padStart(2, '0')
+    return `${año}-${mes}-${dia}`
   } catch (error) {
     console.error('Error formateando fecha:', error)
     return fecha // Devolver la fecha original en caso de error
@@ -96,6 +226,46 @@ function formatearFecha(fecha) {
 <template>
   <div class="card">
     <h2 style="text-align: center;">HISTORIAL DE PACIENTES ATENDIDOS</h2>
+
+    <!-- Sección de filtros de fecha -->
+    <div class="filtros-container">
+      <div class="filtros-row">
+        <div class="filtro-item">
+          <label for="filtroDesde" class="filtro-label">Desde:</label>
+          <input 
+            id="filtroDesde"
+            v-model="filtroDesde" 
+            type="date" 
+            class="filtro-input"
+          />
+        </div>
+        <div class="filtro-item">
+          <label for="filtroHasta" class="filtro-label">Hasta:</label>
+          <input 
+            id="filtroHasta"
+            v-model="filtroHasta" 
+            type="date" 
+            class="filtro-input"
+          />
+        </div>
+        <div class="filtro-buttons">
+          <button 
+            @click="buscarConFiltros" 
+            class="btn btn-primary btn-buscar"
+            :disabled="cargando"
+          >
+            🔍 Buscar
+          </button>
+          <button 
+            @click="limpiarFiltros" 
+            class="btn btn-secondary btn-limpiar"
+            :disabled="cargando"
+          >
+            🧹 Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Indicador de carga -->
     <div v-if="cargando" class="cargando">
@@ -110,8 +280,8 @@ function formatearFecha(fecha) {
     <!-- Lista de pacientes -->
     <div v-else class="historial-container">
       <div v-if="items.length === 0" class="no-pacientes">
-        <p>NO HAY PACIENTES ATENDIDOS POR ESTE ESTUDIANTE</p>
-        <p>DNI DEL ESTUDIANTE: {{ auth.user?.CNRODOC || 'NO DISPONIBLE' }}</p>
+        <p>NO HAY PACIENTES ATENDIDOS EN ESTA FECHA</p>
+        <p>DNI DEL ESTUDIANTE: {{ auth.user?.CDNIEST || 'NO DISPONIBLE' }}</p>
       </div>
       
       <div 

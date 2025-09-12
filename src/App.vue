@@ -4,8 +4,8 @@
     <aside v-if="!isLogin && auth.isLogged" :class="['sidebar', { 'sidebar-open': sidebarOpen }]">
       <div class="sidebar-content">
         <div class="sidebar-buttons">
-          <router-link class="btn btn-SALIR" to="/home" @click="toggleSidebar">INICIO</router-link>
-          <button class="btn btn-SALIR btn-logout" @click="onLogout">SALIR</button>
+          <router-link class="btn btn-primary btn-buscar" to="/home" @click="toggleSidebar">🏠 Inicio</router-link>
+          <button class="btn btn-primary btn-buscar btn-logout" @click="onLogout">🚪 Salir</button>
         </div>
       </div>
     </aside>

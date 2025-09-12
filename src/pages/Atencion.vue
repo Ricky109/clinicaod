@@ -89,7 +89,7 @@ async function grabarYIrAPago() {
 
     <div v-if="!store.paciente">
       <p>PRIMERO SELECCIONE UN PACIENTE.</p>
-      <router-link class="link" to="/buscar">VOLVER A BUSCAR</router-link>
+      <router-link class="link" to="/buscar">VOLVER A BUSCAR/REGISTRAR PACIENTE</router-link>
     </div>
 
     <div v-else>
@@ -182,10 +182,10 @@ async function grabarYIrAPago() {
         </p>
         <div class="flex gap-2">
           <button
-            class="btn btn-SALIR"
+            class="btn btn-primary btn-buscar"
             @click="grabarYIrAPago"
           >
-            GRABAR
+            💾 Grabar
           </button>
         </div>
       </div>
