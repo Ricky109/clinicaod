@@ -15,11 +15,20 @@
 
     <!-- Header -->
     <header v-if="!isLogin" class="header">
-      <h1 v-if="auth.isLogged">{{ auth.user?.CNOMBRE || 'USUARIO' }}</h1>
-      <h1 v-else>CLÍNICA ODONTOLÓGICA</h1>
-      <nav>
-        <button v-if="auth.isLogged" class="sidebar-toggle" @click="toggleSidebar">☰</button>
-      </nav>
+      <div class="header-content">
+        <div class="header-left">
+          <div class="logo-container">
+            <img src="/src/assets/logoE.png" alt="UCSM Logo" class="logo-img" />
+          </div>
+          <div class="university-name">
+            <span class="university-text">Universidad Católica</span>
+            <span class="university-text">de Santa María</span>
+          </div>
+        </div>
+        <nav class="header-right">
+          <button v-if="auth.isLogged" class="sidebar-toggle" @click="toggleSidebar">☰</button>
+        </nav>
+      </div>
     </header>
     
     <!-- Main content -->
