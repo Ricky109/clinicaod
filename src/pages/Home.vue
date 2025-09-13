@@ -29,13 +29,6 @@ const auth = useAuthStore()
         <div class="card-text">Historial de Pagos</div>
       </router-link>
 
-      <!-- Card Atención -->
-      <router-link to="/atencion" class="option-card">
-        <div class="card-icon">
-          <div class="icon-medical">🏥</div>
-        </div>
-        <div class="card-text">Atención</div>
-      </router-link>
     </div>
   </div>
 </template>

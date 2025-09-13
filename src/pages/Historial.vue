@@ -390,6 +390,14 @@ function formatearFecha(fecha) {
   margin-right: 0.5rem;
 }
 
+/* Hacer que los valores (span) se vean en texto normal */
+.historial-row span {
+  font-weight: normal;
+  color: #333;
+  font-family: 'CocogooseCompressed', sans-serif;
+  font-weight: 300;
+}
+
 .estado-icon {
   font-size: 1.2rem;
   font-weight: bold;
@@ -426,5 +434,31 @@ function formatearFecha(fecha) {
 
 .btn-descargar:hover {
   background: #2563eb;
+}
+
+/* Estilos para alinear perfectamente los botones BUSCAR y LIMPIAR */
+.filtro-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.filtro-buttons .btn-buscar,
+.filtro-buttons .btn-limpiar {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: top;
+  margin: 0;
+  padding: 12px 20px;
+  box-sizing: border-box;
+  line-height: 1;
+}
+
+/* Eliminar cualquier transform que pueda causar desalineación */
+.filtro-buttons .btn-buscar:hover,
+.filtro-buttons .btn-limpiar:hover {
+  transform: none;
 }
 </style>
