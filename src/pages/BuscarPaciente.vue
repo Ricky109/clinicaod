@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { usePacienteStore } from '../store/pacienteStore'
 
 const store = usePacienteStore()
@@ -20,30 +20,6 @@ function onDNIInput(event) {
   event.target.value = valorLimpio
 }
 
-// Función para separar el nombre completo en apellidos y nombres
-function separarNombre(nombreCompleto) {
-  // Dividir el nombre completo por espacios
-  const partes = nombreCompleto.trim().split(' ')
-  
-  // Asignar los componentes (asumiendo formato: APELLIDO_PATERNO APELLIDO_MATERNO NOMBRES)
-  let apePat = ''
-  let apeMat = ''
-  let nombres = ''
-  
-  if (partes.length >= 3) {
-    apePat = partes[0]
-    apeMat = partes[1]
-    nombres = partes.slice(2).join(' ')
-  } else if (partes.length === 2) {
-    apePat = partes[0]
-    nombres = partes[1]
-  } else if (partes.length === 1) {
-    nombres = partes[0]
-  }
-  
-  return { apePat, apeMat, nombres }
-}
-
 async function buscar() {
   try {
     error.value = ''
@@ -53,21 +29,17 @@ async function buscar() {
     }
     
     buscando.value = true
-    const resultado = await store.buscarPaciente(dni.value)
+    await store.buscarPaciente(dni.value)
     
-    // Si el paciente existe, separar el nombre completo
-    if (!store.nuevo && resultado && store.paciente.CNOMBRE) {
-      const { apePat, apeMat, nombres } = separarNombre(store.paciente.CNOMBRE)
-      
-      // Asignar los valores separados al store
-      store.paciente.CAPEPAT = apePat
-      store.paciente.CAPEMAT = apeMat
-      store.paciente.CNOMBRE = nombres
-      
+    if (!store.nuevo) {
       editandoCelular.value = false
-    } else if (store.nuevo) {
+    } else {
       // Si es nuevo, inicializar campos vacíos
       editandoCelular.value = false
+      // Inicializar campos para nuevo paciente
+      store.paciente.CAPEPAT = ''
+      store.paciente.CAPEMAT = ''
+      store.paciente.CNOMBRE = ''
     }
   } catch (e) {
     error.value = e.message
@@ -80,14 +52,13 @@ async function guardarPaciente() {
   try {
     error.value = ''
     
-    // Para pacientes existentes, mantener el nombre completo en CNOMBRE
-    if (!store.nuevo) {
-      // Reconstruir el nombre completo para el backend
+    // Para pacientes nuevos, construir el nombre completo desde campos separados
+    if (store.nuevo) {
+      // Unir apellidos y nombres para el formato que espera la API
       const nombreCompleto = `${store.paciente.CAPEPAT} ${store.paciente.CAPEMAT} ${store.paciente.CNOMBRE}`.trim()
       store.paciente.CNOMBRE = nombreCompleto
     }
     
-    // Ajustar formato de fecha para API: de YYYY-MM-DD a YYYY/MM/DD
     if (store.paciente.DNACIMI) {
       store.paciente.DNACIMI = String(store.paciente.DNACIMI).replace(/-/g, '/')
     }
@@ -105,7 +76,6 @@ function editarCelular() {
 
 function cancelarEdicion() {
   editandoCelular.value = false
-  // Restaurar valor original si es necesario
 }
 
 // Computed para determinar si mostrar botón de guardar
@@ -121,6 +91,11 @@ const celularEditable = computed(() => {
 // Computed para determinar si mostrar campos de fecha nacimiento y DNI tratante
 const mostrarCamposAdicionales = computed(() => {
   return store.nuevo
+})
+
+// Computed para determinar si es paciente existente (mostrar nombre completo)
+const esPacienteExistente = computed(() => {
+  return !store.nuevo && store.paciente
 })
 </script>
 
@@ -163,53 +138,44 @@ const mostrarCamposAdicionales = computed(() => {
           readonly 
         />
 
-        <!-- Apellido Paterno -->
-        <label>PRIMER APELLIDO:</label>
-        <input 
-          v-if="store.nuevo" 
-          class="input" 
-          v-model="store.paciente.CAPEPAT" 
-          @input="store.paciente.CAPEPAT = store.paciente.CAPEPAT.toUpperCase()" 
-          placeholder="INGRESE PRIMER APELLIDO"
-        />
-        <input 
-          v-else 
-          class="input input-readonly" 
-          :value="store.paciente.CAPEPAT" 
-          readonly 
-        />
+        <!-- Para pacientes NUEVOS: Campos separados -->
+        <template v-if="store.nuevo">
+          <!-- Apellido Paterno -->
+          <label>PRIMER APELLIDO:</label>
+          <input 
+            class="input" 
+            v-model="store.paciente.CAPEPAT" 
+            @input="store.paciente.CAPEPAT = store.paciente.CAPEPAT.toUpperCase()" 
+            placeholder="INGRESE PRIMER APELLIDO"
+          />
 
-        <!-- Apellido Materno -->
-        <label>SEGUNDO APELLIDO:</label>
-        <input 
-          v-if="store.nuevo" 
-          class="input" 
-          v-model="store.paciente.CAPEMAT" 
-          @input="store.paciente.CAPEMAT = store.paciente.CAPEMAT.toUpperCase()" 
-          placeholder="INGRESE SEGUNDO APELLIDO"
-        />
-        <input 
-          v-else 
-          class="input input-readonly" 
-          :value="store.paciente.CAPEMAT" 
-          readonly 
-        />
+          <!-- Apellido Materno -->
+          <label>SEGUNDO APELLIDO:</label>
+          <input 
+            class="input" 
+            v-model="store.paciente.CAPEMAT" 
+            @input="store.paciente.CAPEMAT = store.paciente.CAPEMAT.toUpperCase()" 
+            placeholder="INGRESE SEGUNDO APELLIDO"
+          />
 
-        <!-- Nombres -->
-        <label>NOMBRES:</label>
-        <input 
-          v-if="store.nuevo" 
-          class="input" 
-          v-model="store.paciente.CNOMBRE" 
-          @input="store.paciente.CNOMBRE = store.paciente.CNOMBRE.toUpperCase()" 
-          placeholder="INGRESE NOMBRES"
-        />
-        <input 
-          v-else 
-          class="input input-readonly" 
-          :value="store.paciente.CNOMBRE" 
-          readonly 
-        />
+          <!-- Nombres -->
+          <label>NOMBRES:</label>
+          <input 
+            class="input" 
+            v-model="store.paciente.CNOMBRE" 
+            @input="store.paciente.CNOMBRE = store.paciente.CNOMBRE.toUpperCase()" 
+            placeholder="INGRESE NOMBRES"
+          />
+        </template>
+
+        <template v-else>
+          <label>NOMBRE:</label>
+          <input 
+            class="input input-readonly" 
+            :value="store.paciente.CNOMBRE" 
+            readonly 
+          />
+        </template>
 
         <!-- Sexo -->
         <label>SEXO:</label>

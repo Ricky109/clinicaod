@@ -97,7 +97,7 @@ async function grabarYIrAPago() {
         <strong>PACIENTE:</strong>
         {{
           store.paciente.CAPEPAT && store.paciente.CAPEMAT && store.paciente.CNOMBRE
-            ? `${store.paciente.CAPEPAT}, ${store.paciente.CAPEMAT}, ${store.paciente.CNOMBRE}`
+            ? `${store.paciente.CAPEPAT} ${store.paciente.CAPEMAT}, ${store.paciente.CNOMBRE}`
             : (store.paciente.CNOMBRE || store.paciente.CNRODNI)
         }}
       </p>
