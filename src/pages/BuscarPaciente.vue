@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { usePacienteStore } from "../store/pacienteStore";
 import { useAuthStore } from "../store/authStore";
 
@@ -9,6 +9,27 @@ const buscando = ref(false);
 const error = ref("");
 const editandoCelular = ref(false);
 const intentoRegistro = ref(false);
+
+// Función para resetear el estado al entrar en la vista
+function resetearVista() {
+  dni.value = "";
+  buscando.value = false;
+  error.value = "";
+  editandoCelular.value = false;
+  intentoRegistro.value = false;
+  // Resetear el store
+  store.paciente = null;
+  store.nuevo = false;
+  store.tratamientos = [];
+  store.nroPago = null;
+  store.montoTotal = 0;
+  store.estadoPago = "PENDIENTE";
+}
+
+// Resetear al montar el componente
+onMounted(() => {
+  resetearVista();
+});
 
 // Validación de DNI - solo 8 dígitos numéricos
 function validarDNI(value) {
@@ -238,7 +259,7 @@ const puedeIrATratamiento = computed(() => {
         <template v-if="mostrarCamposAdicionales">
           <label>FECHA DE NACIMIENTO: (DD/MM/AAAA)</label>
           <input
-            class="input"
+            class="input input-fecha"
             type="date"
             v-model="store.paciente.DNACIMI"
             placeholder="DD/MM/AAAA"
@@ -488,6 +509,14 @@ select.input:focus {
   transform: translateY(-1px);
 }
 
+/* Estilos para input de fecha */
+.input-fecha {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
 /* Responsive para móviles */
 @media (max-width: 768px) {
   .celular-container {
@@ -514,6 +543,13 @@ select.input:focus {
   .button-group .btn {
     width: 100%;
     max-width: 200px;
+  }
+
+  /* Asegurar que el input de fecha no se desborde en móviles */
+  .input-fecha {
+    width: 100%;
+    min-width: 0;
+    font-size: 16px; /* Evita zoom en iOS */
   }
 }
 </style>

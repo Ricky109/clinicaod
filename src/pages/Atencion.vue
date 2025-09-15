@@ -175,19 +175,17 @@ async function grabarYIrAPago() {
       </div>
 
       <!-- Acciones -->
-      <div class="mt-2 flex justify-between items-center flex-wrap gap-2">
-        <p>
-          <strong>MONTO TOTAL:</strong>
-          S/ {{ store.montoTotal.toFixed(2) }}
-        </p>
-        <div class="flex gap-2">
-          <button
-            class="btn btn-primary btn-buscar"
-            @click="grabarYIrAPago"
-          >
-            💾 Grabar
-          </button>
+      <div class="mt-2 flex justify-between items-stretch gap-2">
+        <div class="monto-total-container">
+          <p class="monto-total-label">MONTO TOTAL:</p>
+          <p class="monto-total-value">S/ {{ store.montoTotal.toFixed(2) }}</p>
         </div>
+        <button
+          class="btn btn-primary btn-grabar-full"
+          @click="grabarYIrAPago"
+        >
+          💾 Grabar
+        </button>
       </div>
     </div>
   </div>
@@ -210,6 +208,45 @@ async function grabarYIrAPago() {
   box-sizing: border-box;
 }
 
+/* Reducir tamaño de fuente en los items del multiselect */
+.multiselect__tags {
+  font-size: 13px !important;
+  min-height: 40px !important;
+}
+
+.multiselect__tag {
+  font-size: 12px !important;
+  padding: 4px 8px !important;
+  margin: 2px 4px 2px 0 !important;
+  line-height: 1.2 !important;
+}
+
+.multiselect__tag-icon {
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+}
+
+.multiselect__input {
+  font-size: 13px !important;
+  padding: 8px 10px !important;
+}
+
+.multiselect__placeholder {
+  font-size: 13px !important;
+  padding: 8px 10px !important;
+}
+
+/* Items en el dropdown */
+.multiselect__option {
+  font-size: 13px !important;
+  padding: 8px 12px !important;
+  line-height: 1.3 !important;
+}
+
+.multiselect__option--highlight {
+  font-size: 13px !important;
+}
+
 /* Nueva clase para textos largos */
 .tratamiento-descripcion {
   display: block;
@@ -220,5 +257,85 @@ async function grabarYIrAPago() {
   padding: 4px;
   border: 1px solid #ddd;
   border-radius: 4px;
+}
+
+/* Estilos para el monto total - similar al botón GRABAR pero en verde */
+.monto-total-container {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 2px solid #86efac;
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.15);
+  text-align: center;
+  min-width: 50px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+}
+
+/* Botón GRABAR con las mismas dimensiones que el MONTO TOTAL */
+.btn-grabar-full {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: 2px solid #34d399;
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
+  flex: 1;
+  transition: all 0.3s ease;
+}
+
+.btn-grabar-full:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  border-color: #10b981;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.monto-total-label {
+  color: #166534;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.monto-total-value {
+  color: #15803d;
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+  .monto-total-container {
+    min-width: 100%;
+    margin-bottom: 16px;
+  }
+  
+  .monto-total-value {
+    font-size: 20px;
+  }
+  
+  /* En móviles, apilar verticalmente */
+  .mt-2.flex {
+    flex-direction: column;
+  }
+  
+  .btn-grabar-full {
+    width: 100%;
+    margin-top: 8px;
+  }
 }
 </style>
