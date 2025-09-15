@@ -64,9 +64,9 @@ async function guardarPaciente() {
     const auth = useAuthStore();
 
     if (store.nuevo) {
-      const nombreCompleto =
-        `${store.paciente.CAPEPAT} ${store.paciente.CAPEMAT} ${store.paciente.CNOMBRE}`.trim();
-      store.paciente.CNOMBRE = nombreCompleto;
+      store.paciente.CAPEPAT = store.paciente.CAPEPAT?.trim();
+      store.paciente.CAPEMAT = store.paciente.CAPEMAT?.trim();
+      store.paciente.CNOMBRE = store.paciente.CNOMBRE?.trim();
     }
 
     // ✅ Conversión de fecha DD/MM/AAAA → AAAA-MM-DD
