@@ -9,6 +9,7 @@ const routes = [
   { path: '/atencion', component: () => import('../pages/Atencion.vue'), meta: { auth: true } },
   { path: '/pago', component: () => import('../pages/Pago.vue'), meta: { auth: true } },
   { path: '/historial', component: () => import('../pages/Historial.vue'), meta: { auth: true } },
+  { path: '/:pathMatch(.*)', component: () => import('../pages/NotFound.vue') },
 ]
 
 const router = createRouter({
@@ -18,7 +19,9 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const auth = useAuthStore()
-  if (to.meta.auth && !auth.isLogged) return next('/login')
+  // Si ya está autenticado y va a /login, redirigir al home existente
+  if (to.path === '/login' && auth.isAuthenticated) return next('/home')
+  if (to.meta.auth && !auth.isAuthenticated) return next('/login')
   next()
 })
 

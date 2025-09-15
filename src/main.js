@@ -3,5 +3,11 @@ import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
 import './styles.css'
+import { registerServiceWorker } from './registerServiceWorker'
 
-createApp(App).use(createPinia()).use(router).mount('#app')
+const app = createApp(App)
+app.use(createPinia()).use(router)
+app.mount('#app')
+
+// Registrar SW al inicio
+registerServiceWorker()

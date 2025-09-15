@@ -1,124 +1,157 @@
 <script setup>
-import { ref, computed } from 'vue'
-import { usePacienteStore } from '../store/pacienteStore'
+import { ref, computed } from "vue";
+import { usePacienteStore } from "../store/pacienteStore";
 
-const store = usePacienteStore()
-const dni = ref('')
-const buscando = ref(false)
-const error = ref('')
-const editandoCelular = ref(false)
+const store = usePacienteStore();
+const dni = ref("");
+const buscando = ref(false);
+const error = ref("");
+const editandoCelular = ref(false);
+const intentoRegistro = ref(false);
 
 // Validación de DNI - solo 8 dígitos numéricos
 function validarDNI(value) {
-  const soloNumeros = value.replace(/\D/g, '')
-  return soloNumeros.slice(0, 8)
+  const soloNumeros = value.replace(/\D/g, "");
+  return soloNumeros.slice(0, 8);
 }
 
 function onDNIInput(event) {
-  const valorLimpio = validarDNI(event.target.value)
-  dni.value = valorLimpio
-  event.target.value = valorLimpio
+  const valorLimpio = validarDNI(event.target.value);
+  dni.value = valorLimpio;
+  event.target.value = valorLimpio;
+}
+
+// Permite solo letras (incluye acentos y espacios) y convierte a mayúsculas
+function soloLetrasMayus(value) {
+  if (!value) return "";
+  return String(value)
+    .toUpperCase()
+    .replace(/[^A-ZÁÉÍÓÚÜÑ\s]/g, "");
 }
 
 async function buscar() {
   try {
-    error.value = ''
+    error.value = "";
     if (dni.value.length !== 8) {
-      error.value = 'El DNI debe tener exactamente 8 dígitos'
-      return
+      error.value = "El DNI debe tener exactamente 8 dígitos";
+      return;
     }
-    
-    buscando.value = true
-    await store.buscarPaciente(dni.value)
-    
+
+    buscando.value = true;
+    await store.buscarPaciente(dni.value);
+
     if (!store.nuevo) {
-      editandoCelular.value = false
+      editandoCelular.value = false;
     } else {
       // Si es nuevo, inicializar campos vacíos
-      editandoCelular.value = false
+      editandoCelular.value = false;
       // Inicializar campos para nuevo paciente
-      store.paciente.CAPEPAT = ''
-      store.paciente.CAPEMAT = ''
-      store.paciente.CNOMBRE = ''
+      store.paciente.CAPEPAT = "";
+      store.paciente.CAPEMAT = "";
+      store.paciente.CNOMBRE = "";
     }
   } catch (e) {
-    error.value = e.message
+    error.value = e.message;
   } finally {
-    buscando.value = false
+    buscando.value = false;
   }
 }
 
 async function guardarPaciente() {
   try {
-    error.value = ''
-    
+    error.value = "";
+
     // Para pacientes nuevos, construir el nombre completo desde campos separados
     if (store.nuevo) {
+      // Validación de requeridos
+      intentoRegistro.value = true;
+      const apePat = (store.paciente.CAPEPAT || "").trim();
+      const apeMat = (store.paciente.CAPEMAT || "").trim();
+      const nombres = (store.paciente.CNOMBRE || "").trim();
+      const fechaNac = (store.paciente.DNACIMI || "").toString().trim();
+      const dniTrat = (store.paciente.CDNIEST || "").toString().trim();
+      const celular = (store.paciente.CNROCEL || "").toString().trim();
+      if (!apePat || !apeMat || !nombres || !fechaNac || !dniTrat || !celular) {
+        throw new Error("Complete los campos obligatorios");
+      }
       // Unir apellidos y nombres para el formato que espera la API
-      const nombreCompleto = `${store.paciente.CAPEPAT} ${store.paciente.CAPEMAT} ${store.paciente.CNOMBRE}`.trim()
-      store.paciente.CNOMBRE = nombreCompleto
+      const nombreCompleto =
+        `${store.paciente.CAPEPAT} ${store.paciente.CAPEMAT} ${store.paciente.CNOMBRE}`.trim();
+      store.paciente.CNOMBRE = nombreCompleto;
     }
-    
+
     if (store.paciente.DNACIMI) {
-      store.paciente.DNACIMI = String(store.paciente.DNACIMI).replace(/-/g, '/')
+      store.paciente.DNACIMI = String(store.paciente.DNACIMI).replace(
+        /-/g,
+        "/"
+      );
     }
-    
-    await store.registrarPaciente(store.paciente)
-    editandoCelular.value = false
-  } catch (e) { 
-    error.value = e.message 
+
+    await store.registrarPaciente(store.paciente);
+    editandoCelular.value = false;
+  } catch (e) {
+    error.value = e.message;
   }
 }
 
 function editarCelular() {
-  editandoCelular.value = true
+  editandoCelular.value = true;
 }
 
 function cancelarEdicion() {
-  editandoCelular.value = false
+  editandoCelular.value = false;
 }
 
 // Computed para determinar si mostrar botón de guardar
 const mostrarGuardar = computed(() => {
-  return store.nuevo || editandoCelular.value
-})
+  return store.nuevo || editandoCelular.value;
+});
 
 // Computed para determinar si el celular es editable
 const celularEditable = computed(() => {
-  return store.nuevo || editandoCelular.value
-})
+  return store.nuevo || editandoCelular.value;
+});
 
 // Computed para determinar si mostrar campos de fecha nacimiento y DNI tratante
 const mostrarCamposAdicionales = computed(() => {
-  return store.nuevo
-})
+  return store.nuevo;
+});
 
 // Computed para determinar si es paciente existente (mostrar nombre completo)
 const esPacienteExistente = computed(() => {
-  return !store.nuevo && store.paciente
-})
+  return !store.nuevo && store.paciente;
+});
+
+// Solo permitir ir a Tratamiento cuando el paciente ya esté registrado (no nuevo)
+const puedeIrATratamiento = computed(() => {
+  return !!store.paciente && !store.nuevo;
+});
 </script>
 
 <template>
   <div class="card">
-    <h2 style="text-align: center;">BUSCAR/REGISTRAR PACIENTE</h2>
-    
+    <h2 style="text-align: center">BUSCAR/REGISTRAR PACIENTE</h2>
+
     <!-- Campo DNI con validación -->
     <div class="grid grid-2">
-      <input 
-        class="input" 
-        placeholder="DNI PACIENTE (8 dígitos)" 
+      <input
+        class="input"
+        placeholder="DNI PACIENTE (8 dígitos)"
         :value="dni"
         @input="onDNIInput"
         maxlength="8"
         inputmode="numeric"
         pattern="[0-9]{8}"
       />
-      
+
       <!-- Botón Buscar -->
-      <div style="text-align:center;">
-        <button class="btn btn-primary btn-buscar" @click="buscar" :disabled="buscando || dni.length !== 8">
-          {{ buscando ? '🔍 Buscando...' : '🔍 Buscar' }}
+      <div style="text-align: center">
+        <button
+          class="btn btn-primary btn-buscar"
+          @click="buscar"
+          :disabled="buscando || dni.length !== 8"
+        >
+          {{ buscando ? "🔍 Buscando..." : "🔍 Buscar" }}
         </button>
       </div>
     </div>
@@ -132,143 +165,175 @@ const esPacienteExistente = computed(() => {
       <div class="grid grid-1">
         <!-- DNI -->
         <label>DNI:</label>
-        <input 
-          class="input input-readonly" 
-          :value="store.paciente.CNRODNI" 
-          readonly 
+        <input
+          class="input input-readonly"
+          :value="store.paciente.CNRODNI"
+          readonly
         />
 
         <!-- Para pacientes NUEVOS: Campos separados -->
         <template v-if="store.nuevo">
           <!-- Apellido Paterno -->
           <label>PRIMER APELLIDO:</label>
-          <input 
-            class="input" 
-            v-model="store.paciente.CAPEPAT" 
-            @input="store.paciente.CAPEPAT = store.paciente.CAPEPAT.toUpperCase()" 
+          <input
+            class="input"
+            v-model="store.paciente.CAPEPAT"
+            @input="store.paciente.CAPEPAT = soloLetrasMayus(store.paciente.CAPEPAT)"
             placeholder="INGRESE PRIMER APELLIDO"
           />
+          <small v-if="intentoRegistro && !(store.paciente.CAPEPAT || '').trim()" class="campo-obligatorio">*Campo obligatorio*</small>
 
           <!-- Apellido Materno -->
           <label>SEGUNDO APELLIDO:</label>
-          <input 
-            class="input" 
-            v-model="store.paciente.CAPEMAT" 
-            @input="store.paciente.CAPEMAT = store.paciente.CAPEMAT.toUpperCase()" 
+          <input
+            class="input"
+            v-model="store.paciente.CAPEMAT"
+            @input="store.paciente.CAPEMAT = soloLetrasMayus(store.paciente.CAPEMAT)"
             placeholder="INGRESE SEGUNDO APELLIDO"
           />
+          <small v-if="intentoRegistro && !(store.paciente.CAPEMAT || '').trim()" class="campo-obligatorio">*Campo obligatorio*</small>
 
           <!-- Nombres -->
           <label>NOMBRES:</label>
-          <input 
-            class="input" 
-            v-model="store.paciente.CNOMBRE" 
-            @input="store.paciente.CNOMBRE = store.paciente.CNOMBRE.toUpperCase()" 
+          <input
+            class="input"
+            v-model="store.paciente.CNOMBRE"
+            @input="store.paciente.CNOMBRE = soloLetrasMayus(store.paciente.CNOMBRE)"
             placeholder="INGRESE NOMBRES"
           />
+          <small v-if="intentoRegistro && !(store.paciente.CNOMBRE || '').trim()" class="campo-obligatorio">*Campo obligatorio*</small>
         </template>
 
         <template v-else>
           <label>NOMBRE:</label>
-          <input 
-            class="input input-readonly" 
-            :value="store.paciente.CNOMBRE" 
-            readonly 
+          <input
+            class="input input-readonly"
+            :value="store.paciente.CNOMBRE"
+            readonly
           />
         </template>
 
-        <!-- Sexo -->
-        <label>SEXO:</label>
-        <select 
-          v-if="store.nuevo" 
-          class="input" 
-          v-model="store.paciente.CSEXO"
-        >
-          <option value="M">MASCULINO</option>
-          <option value="F">FEMENINO</option>
-        </select>
-        <input 
-          v-else 
-          class="input input-readonly" 
-          :value="store.paciente.CSEXO ? (store.paciente.CSEXO === 'M' ? 'MASCULINO' : store.paciente.CSEXO === 'F' ? 'FEMENINO' : store.paciente.CSEXO) : ''" 
-          readonly 
-        />
+        <!-- Sexo (solo mostrar cuando se registra un paciente nuevo) -->
+        <template v-if="store.nuevo">
+          <label>SEXO:</label>
+          <select class="input" v-model="store.paciente.CSEXO">
+            <option value="M">MASCULINO</option>
+            <option value="F">FEMENINO</option>
+          </select>
+        </template>
 
         <!-- Fecha de Nacimiento (solo para nuevos pacientes) -->
         <template v-if="mostrarCamposAdicionales">
           <label>FECHA DE NACIMIENTO: (DD/MM/AAAA)</label>
-          <input 
-            class="input" 
+          <input
+            class="input"
             type="date"
-            v-model="store.paciente.DNACIMI" 
+            v-model="store.paciente.DNACIMI"
             placeholder="DD/MM/AAAA"
           />
+          <small v-if="intentoRegistro && !(store.paciente.DNACIMI || '').toString().trim()" class="campo-obligatorio">*Campo obligatorio*</small>
         </template>
 
         <!-- DNI del Tratante (solo para nuevos pacientes) -->
         <template v-if="mostrarCamposAdicionales">
           <label>DNI DEL TRATANTE:</label>
-          <input 
-            class="input" 
-            v-model="store.paciente.CDNIEST" 
-            @input="store.paciente.CDNIEST = store.paciente.CDNIEST.replace(/\D/g, '').slice(0, 8)"
+          <input
+            class="input"
+            v-model="store.paciente.CDNIEST"
+            @input="
+              store.paciente.CDNIEST = store.paciente.CDNIEST.replace(
+                /\D/g,
+                ''
+              ).slice(0, 8)
+            "
             maxlength="8"
             inputmode="numeric"
             pattern="[0-9]{8}"
             placeholder="INGRESE DNI DEL TRATANTE"
           />
+          <small v-if="intentoRegistro && !(store.paciente.CDNIEST || '').toString().trim()" class="campo-obligatorio">*Campo obligatorio*</small>
         </template>
 
-        <!-- Celular con icono de edición -->
+        <!-- Celular con input group y acción fija -->
         <label>CELULAR DEL PACIENTE:</label>
-        <div class="celular-container">
-          <input 
-            class="input" 
+        <div class="input-group">
+          <input
+            class="input input-group-field"
             :class="{ 'input-readonly': !celularEditable }"
-            v-model="store.paciente.CNROCEL" 
-            @input="store.paciente.CNROCEL = store.paciente.CNROCEL.replace(/\D/g, '').slice(0, 9)"
+            v-model="store.paciente.CNROCEL"
+            @input="
+              store.paciente.CNROCEL = store.paciente.CNROCEL.replace(
+                /\D/g,
+                ''
+              ).slice(0, 9)
+            "
             maxlength="9"
             inputmode="numeric"
             pattern="[0-9]{9}"
             :readonly="!celularEditable"
             placeholder="INGRESE NÚMERO DE CELULAR"
           />
-          <button 
-            v-if="!store.nuevo && !editandoCelular" 
-            class="btn-edit" 
-            @click="editarCelular"
-            title="Editar celular"
-          >
-            ✏️
-          </button>
-          <div v-if="editandoCelular && !store.nuevo" class="edit-buttons">
-            <button class="btn btn-secondary btn-sm" @click="cancelarEdicion">CANCELAR</button>
+          
+          <div class="action-slot">
+            <button
+              v-if="!store.nuevo && !editandoCelular"
+              class="btn-edit right-addon"
+              @click="editarCelular"
+              title="Editar celular"
+            >
+              ✏️
+            </button>
+            <button
+              v-else-if="editandoCelular && !store.nuevo"
+              class="btn btn-secondary btn-cancel"
+              @click="cancelarEdicion"
+            >
+              Cancelar
+            </button>
           </div>
         </div>
+        <small v-if="intentoRegistro && !(store.paciente.CNROCEL || '').toString().trim()" class="campo-obligatorio">*Campo obligatorio*</small>
       </div>
 
       <!-- Botones de acción -->
       <div class="mt-2 button-group">
-        <button 
-          v-if="mostrarGuardar" 
-          class="btn btn-primary btn-buscar" 
+        <button
+          v-if="mostrarGuardar"
+          class="btn btn-primary btn-buscar"
           @click="guardarPaciente"
         >
-          {{ store.nuevo ? '👤 Registrar Paciente' : '💾 Guardar Cambios' }}
+          {{ store.nuevo ? "👤 Registrar Paciente" : "💾 Guardar Cambios" }}
         </button>
-        
-        <router-link class="btn btn-primary btn-buscar" to="/atencion">
+
+        <router-link 
+          v-if="puedeIrATratamiento"
+          class="btn btn-primary btn-buscar" 
+          to="/atencion"
+        >
           🏥 Tratamiento
         </router-link>
+        <button 
+          v-else 
+          class="btn btn-primary btn-buscar" 
+          disabled
+          title="Complete el registro del paciente para continuar"
+        >
+          🏥 Tratamiento
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+.campo-obligatorio {
+  color: #b91c1c;
+  font-size: 12px;
+  margin-top: 4px;
+}
 .input-readonly {
   background-color: #f3f4f6; /* gris claro */
-  color: #6b7280;           /* texto gris */
+  color: #6b7280; /* texto gris */
   cursor: not-allowed;
 }
 
@@ -309,21 +374,34 @@ select.input:focus {
   flex: 1;
 }
 
+/* boton editar celular */
+.input-group {
+  display: flex;
+  width: 100%;
+  align-items: center;
+}
+
 .btn-edit {
   background: rgba(5, 190, 106, 0.1);
   border: 2px solid rgba(5, 190, 106, 0.3);
   color: #05be6a;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 6px 10px;
+  border-top-right-radius: 6px;
+  border-bottom-right-radius: 6px;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 18px;
   transition: all 0.3s ease;
-  min-width: 40px;
-  height: 40px;
+  min-width: 50px;
+  height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 0;
 }
+
+
 
 .btn-edit:hover {
   background: rgba(5, 190, 106, 0.2);
@@ -337,15 +415,75 @@ select.input:focus {
   margin-left: 8px;
 }
 
-.button-group {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
 
 .button-group .btn {
-  min-width: 150px;
+  min-width: 100px;
+}
+
+/* Separación vertical entre Registrar Paciente y Tratamiento cuando ambos están visibles */
+.button-group .btn-buscar + .btn-buscar {
+  margin: 15px 0 0;
+}
+
+/* Asegurar disposición en columna también en pantallas grandes */
+.button-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Unificar ancho de botones en pantallas grandes */
+.button-group .btn-buscar {
+  width: 200px;
+}
+
+/* Input group para celular */
+.input-group {
+  display: flex;
+  width: 100%;
+  align-items: flex; 
+  height: 40px;
+}
+
+.input-group-field {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.action-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.right-addon {
+  height: 100%;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.btn-cancel {
+  background: rgba(220, 38, 38, 0.1);    
+  border: 2px solid rgba(220, 38, 38, 0.3);
+  color: #dc2626;                          
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 10px;
+  transition: all 0.3s ease;
+  min-width: 42px;
+  height: 42px;            
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+}
+
+.btn-cancel:hover {
+  background: rgba(220, 38, 38, 0.2);
+  border-color: rgba(220, 38, 38, 0.5);
+  transform: translateY(-1px);
 }
 
 /* Responsive para móviles */
@@ -354,23 +492,23 @@ select.input:focus {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .btn-edit {
     align-self: flex-end;
     width: fit-content;
   }
-  
+
   .edit-buttons {
     margin-left: 0;
     margin-top: 8px;
     justify-content: flex-end;
   }
-  
+
   .button-group {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .button-group .btn {
     width: 100%;
     max-width: 200px;

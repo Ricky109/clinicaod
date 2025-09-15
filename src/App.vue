@@ -1,5 +1,6 @@
 <template>
   <div class="app-wrapper">
+    <div v-if="showUpdate" class="update-toast">Nueva versión disponible, actualizando...</div>
     <!-- Sidebar derecho -->
     <aside v-if="!isLogin && auth.isLogged" :class="['sidebar', { 'sidebar-open': sidebarOpen }]">
       <div class="sidebar-content">
@@ -39,9 +40,10 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from './store/authStore'
+import { registerSW } from 'virtual:pwa-register'
 
 const router = useRouter()
 const route = useRoute()
@@ -49,6 +51,7 @@ const auth = useAuthStore()
 
 const isLogin = computed(() => route.path === '/login')
 const sidebarOpen = ref(false)
+const showUpdate = ref(false)
 
 function toggleSidebar() {
   sidebarOpen.value = !sidebarOpen.value
@@ -59,4 +62,39 @@ function onLogout() {
   router.push('/login')
   sidebarOpen.value = false
 }
+
+// PWA auto-update notification and reload
+onMounted(() => {
+  try {
+    registerSW({
+      immediate: true,
+      onNeedRefresh() {
+        showUpdate.value = true
+        setTimeout(() => {
+          try { window.location.reload() } catch (_) { location.reload() }
+        }, 800)
+      },
+      onOfflineReady() {
+        // opcional: mostrar aviso de offline listo
+      }
+    })
+  } catch (_) {
+    // ignorar en entornos sin SW
+  }
+})
 </script>
+
+<style scoped>
+.update-toast {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111827;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  z-index: 1000;
+}
+</style>

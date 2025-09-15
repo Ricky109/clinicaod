@@ -13,6 +13,10 @@ export const usePacienteStore = defineStore("paciente", {
     nroPago: null,
     montoTotal: 0,
     estadoPago: "PENDIENTE",
+    filtros: {
+      dni: "",
+      nombre: "",
+    },
   }),
   actions: {
     async buscarPaciente(dni) {

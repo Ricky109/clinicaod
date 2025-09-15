@@ -8,6 +8,8 @@ export const useAuthStore = defineStore('auth', {
   }),
   getters: {
     isLogged: (s) => !!s.user,
+    // Alias compatible para middlewares: isAuthenticated
+    isAuthenticated: (s) => !!s.user,
     // ✅ CORRECCIÓN: Usar CDNIEST en lugar de CDNIALU
     codigoEstudiante: (s) => s.user?.CDNIEST || null
   },
