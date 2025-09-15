@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from "vue";
 import { usePacienteStore } from "../store/pacienteStore";
+import { useAuthStore } from "../store/authStore";
 
 const store = usePacienteStore();
 const dni = ref("");
@@ -60,32 +61,25 @@ async function buscar() {
 async function guardarPaciente() {
   try {
     error.value = "";
+    const auth = useAuthStore();
 
-    // Para pacientes nuevos, construir el nombre completo desde campos separados
     if (store.nuevo) {
-      // Validación de requeridos
-      intentoRegistro.value = true;
-      const apePat = (store.paciente.CAPEPAT || "").trim();
-      const apeMat = (store.paciente.CAPEMAT || "").trim();
-      const nombres = (store.paciente.CNOMBRE || "").trim();
-      const fechaNac = (store.paciente.DNACIMI || "").toString().trim();
-      const dniTrat = (store.paciente.CDNIEST || "").toString().trim();
-      const celular = (store.paciente.CNROCEL || "").toString().trim();
-      if (!apePat || !apeMat || !nombres || !fechaNac || !dniTrat || !celular) {
-        throw new Error("Complete los campos obligatorios");
-      }
-      // Unir apellidos y nombres para el formato que espera la API
       const nombreCompleto =
         `${store.paciente.CAPEPAT} ${store.paciente.CAPEMAT} ${store.paciente.CNOMBRE}`.trim();
       store.paciente.CNOMBRE = nombreCompleto;
     }
 
+    // ✅ Conversión de fecha DD/MM/AAAA → AAAA-MM-DD
     if (store.paciente.DNACIMI) {
-      store.paciente.DNACIMI = String(store.paciente.DNACIMI).replace(
-        /-/g,
-        "/"
-      );
+      const fecha = String(store.paciente.DNACIMI);
+      if (fecha.includes("/")) {
+        const [dd, mm, yyyy] = fecha.split("/");
+        store.paciente.DNACIMI = `${yyyy}-${mm}-${dd}`;
+      }
     }
+
+    // ✅ Agregar automáticamente el DNI del tratante logeado
+    store.paciente.CDNIEST = auth.dniTratante;
 
     await store.registrarPaciente(store.paciente);
     editandoCelular.value = false;
@@ -178,30 +172,48 @@ const puedeIrATratamiento = computed(() => {
           <input
             class="input"
             v-model="store.paciente.CAPEPAT"
-            @input="store.paciente.CAPEPAT = soloLetrasMayus(store.paciente.CAPEPAT)"
+            @input="
+              store.paciente.CAPEPAT = soloLetrasMayus(store.paciente.CAPEPAT)
+            "
             placeholder="INGRESE PRIMER APELLIDO"
           />
-          <small v-if="intentoRegistro && !(store.paciente.CAPEPAT || '').trim()" class="campo-obligatorio">*Campo obligatorio*</small>
+          <small
+            v-if="intentoRegistro && !(store.paciente.CAPEPAT || '').trim()"
+            class="campo-obligatorio"
+            >*Campo obligatorio*</small
+          >
 
           <!-- Apellido Materno -->
           <label>SEGUNDO APELLIDO:</label>
           <input
             class="input"
             v-model="store.paciente.CAPEMAT"
-            @input="store.paciente.CAPEMAT = soloLetrasMayus(store.paciente.CAPEMAT)"
+            @input="
+              store.paciente.CAPEMAT = soloLetrasMayus(store.paciente.CAPEMAT)
+            "
             placeholder="INGRESE SEGUNDO APELLIDO"
           />
-          <small v-if="intentoRegistro && !(store.paciente.CAPEMAT || '').trim()" class="campo-obligatorio">*Campo obligatorio*</small>
+          <small
+            v-if="intentoRegistro && !(store.paciente.CAPEMAT || '').trim()"
+            class="campo-obligatorio"
+            >*Campo obligatorio*</small
+          >
 
           <!-- Nombres -->
           <label>NOMBRES:</label>
           <input
             class="input"
             v-model="store.paciente.CNOMBRE"
-            @input="store.paciente.CNOMBRE = soloLetrasMayus(store.paciente.CNOMBRE)"
+            @input="
+              store.paciente.CNOMBRE = soloLetrasMayus(store.paciente.CNOMBRE)
+            "
             placeholder="INGRESE NOMBRES"
           />
-          <small v-if="intentoRegistro && !(store.paciente.CNOMBRE || '').trim()" class="campo-obligatorio">*Campo obligatorio*</small>
+          <small
+            v-if="intentoRegistro && !(store.paciente.CNOMBRE || '').trim()"
+            class="campo-obligatorio"
+            >*Campo obligatorio*</small
+          >
         </template>
 
         <template v-else>
@@ -231,27 +243,14 @@ const puedeIrATratamiento = computed(() => {
             v-model="store.paciente.DNACIMI"
             placeholder="DD/MM/AAAA"
           />
-          <small v-if="intentoRegistro && !(store.paciente.DNACIMI || '').toString().trim()" class="campo-obligatorio">*Campo obligatorio*</small>
-        </template>
-
-        <!-- DNI del Tratante (solo para nuevos pacientes) -->
-        <template v-if="mostrarCamposAdicionales">
-          <label>DNI DEL TRATANTE:</label>
-          <input
-            class="input"
-            v-model="store.paciente.CDNIEST"
-            @input="
-              store.paciente.CDNIEST = store.paciente.CDNIEST.replace(
-                /\D/g,
-                ''
-              ).slice(0, 8)
+          <small
+            v-if="
+              intentoRegistro &&
+              !(store.paciente.DNACIMI || '').toString().trim()
             "
-            maxlength="8"
-            inputmode="numeric"
-            pattern="[0-9]{8}"
-            placeholder="INGRESE DNI DEL TRATANTE"
-          />
-          <small v-if="intentoRegistro && !(store.paciente.CDNIEST || '').toString().trim()" class="campo-obligatorio">*Campo obligatorio*</small>
+            class="campo-obligatorio"
+            >*Campo obligatorio*</small
+          >
         </template>
 
         <!-- Celular con input group y acción fija -->
@@ -273,7 +272,7 @@ const puedeIrATratamiento = computed(() => {
             :readonly="!celularEditable"
             placeholder="INGRESE NÚMERO DE CELULAR"
           />
-          
+
           <div class="action-slot">
             <button
               v-if="!store.nuevo && !editandoCelular"
@@ -292,7 +291,13 @@ const puedeIrATratamiento = computed(() => {
             </button>
           </div>
         </div>
-        <small v-if="intentoRegistro && !(store.paciente.CNROCEL || '').toString().trim()" class="campo-obligatorio">*Campo obligatorio*</small>
+        <small
+          v-if="
+            intentoRegistro && !(store.paciente.CNROCEL || '').toString().trim()
+          "
+          class="campo-obligatorio"
+          >*Campo obligatorio*</small
+        >
       </div>
 
       <!-- Botones de acción -->
@@ -305,16 +310,16 @@ const puedeIrATratamiento = computed(() => {
           {{ store.nuevo ? "👤 Registrar Paciente" : "💾 Guardar Cambios" }}
         </button>
 
-        <router-link 
+        <router-link
           v-if="puedeIrATratamiento"
-          class="btn btn-primary btn-buscar" 
+          class="btn btn-primary btn-buscar"
           to="/atencion"
         >
           🏥 Tratamiento
         </router-link>
-        <button 
-          v-else 
-          class="btn btn-primary btn-buscar" 
+        <button
+          v-else
+          class="btn btn-primary btn-buscar"
           disabled
           title="Complete el registro del paciente para continuar"
         >
@@ -401,8 +406,6 @@ select.input:focus {
   margin: 0;
 }
 
-
-
 .btn-edit:hover {
   background: rgba(5, 190, 106, 0.2);
   border-color: rgba(5, 190, 106, 0.5);
@@ -414,7 +417,6 @@ select.input:focus {
   gap: 8px;
   margin-left: 8px;
 }
-
 
 .button-group .btn {
   min-width: 100px;
@@ -441,7 +443,7 @@ select.input:focus {
 .input-group {
   display: flex;
   width: 100%;
-  align-items: flex; 
+  align-items: flex;
   height: 40px;
 }
 
@@ -464,16 +466,16 @@ select.input:focus {
 }
 
 .btn-cancel {
-  background: rgba(220, 38, 38, 0.1);    
+  background: rgba(220, 38, 38, 0.1);
   border: 2px solid rgba(220, 38, 38, 0.3);
-  color: #dc2626;                          
+  color: #dc2626;
   padding: 6px 8px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 10px;
   transition: all 0.3s ease;
   min-width: 42px;
-  height: 42px;            
+  height: 42px;
   display: flex;
   align-items: center;
   justify-content: center;

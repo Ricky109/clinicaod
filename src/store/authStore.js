@@ -3,27 +3,31 @@ import * as authService from '../services/authService'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null, 
-    token: null
+    user: null,
+    token: null,
+    dniTratante: null
   }),
   getters: {
     isLogged: (s) => !!s.user,
-    // Alias compatible para middlewares: isAuthenticated
     isAuthenticated: (s) => !!s.user,
-    // ✅ CORRECCIÓN: Usar CDNIEST en lugar de CDNIALU
     codigoEstudiante: (s) => s.user?.CDNIEST || null
   },
   actions: {
     async login(paData) {
       const res = await authService.login(paData)
-      if (res.ERROR) throw new Error(res.ERROR) 
+      if (res.ERROR) throw new Error(res.ERROR)
+
       this.user = res
       this.token = 'mock-token'
+
+      this.dniTratante = res.CDNIEST || res.CNRODOC
+
       return res
     },
     logout() {
       this.user = null
       this.token = null
+      this.dniTratante = null
     }
   }
 })
