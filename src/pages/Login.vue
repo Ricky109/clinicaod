@@ -11,6 +11,13 @@ const loading = ref(false)
 const error = ref('')
 const showPassword = ref(false)
 
+// Recuperación de contraseña
+const showRecoveryModal = ref(false)
+const recoveryForm = ref({ CCODALU: '', CEMAIL: '' })
+const sendingRecovery = ref(false)
+const recoveryMessage = ref('')
+const recoveryError = ref('')
+
 function normalizeCodigo(value) {
   // Solo números y máximo 10 dígitos
   return String(value || '').replace(/\D+/g, '').slice(0, 10)
@@ -47,6 +54,75 @@ async function submit() {
     error.value = e.message || 'Error'
   } finally {
     loading.value = false
+  }
+}
+
+function openRecoveryModal() {
+  recoveryForm.value = { CCODALU: '', CEMAIL: '' }
+  recoveryMessage.value = ''
+  recoveryError.value = ''
+  showRecoveryModal.value = true
+}
+
+function closeRecoveryModal() {
+  showRecoveryModal.value = false
+}
+
+async function sendRecoveryEmail() {
+  recoveryMessage.value = ''
+  recoveryError.value = ''
+  try {
+    // Validaciones básicas
+    const codigo = String(recoveryForm.value.CCODALU || '').replace(/[^0-9]/g, '').slice(0, 10)
+    const email = String(recoveryForm.value.CEMAIL || '').trim()
+    if (!codigo || codigo.length !== 10) {
+      recoveryError.value = 'Ingrese un código de alumno válido'
+      return
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      recoveryError.value = 'Ingrese un correo institucional válido'
+      return
+    }
+
+    sendingRecovery.value = true
+    const endpoint = 'https://transacciones.ucsm.edu.pe/MSERP/MsAplicativos/'
+
+    // 1) Solicitar nueva contraseña
+    const firstPayload = {
+      ID: 'LOGNEWE',
+      CCODALU: codigo,
+      CEMAIL: email
+    }
+    const firstRes = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(firstPayload)
+    })
+    if (!firstRes.ok) throw new Error('No se pudo generar la nueva contraseña')
+    const firstData = await firstRes.json()
+
+    // 2) Enviar correo con la nueva contraseña
+    const secondPayload = {
+      ID: 'ERP0014',
+      CORIGEN: 0,
+      CDEDIC: '<b>Estimado usuario:</b>',
+      COBSERV: 'Nueva contraseña: ' + String(firstData?.CPASNEW ?? ''),
+      CASUNTO: 'Actualización de contraseña',
+      CMENSAJE: 'Su clave fue actualizada con éxito',
+      CEMAIL: String(firstData?.CEMAIL ?? email)
+    }
+    const secondRes = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(secondPayload)
+    })
+    if (!secondRes.ok) throw new Error('No se pudo enviar el correo')
+
+    recoveryMessage.value = 'Correo enviado con éxito'
+  } catch (e) {
+    recoveryError.value = e.message || 'Error al enviar correo'
+  } finally {
+    sendingRecovery.value = false
   }
 }
 </script>
@@ -91,6 +167,12 @@ async function submit() {
         </span>
       </div>
 
+      <div class="forgot-wrap">
+        <a href="#" role="button" tabindex="0" class="forgot-link" @click.prevent="openRecoveryModal" @keyup.enter.prevent="openRecoveryModal">
+          ¿Olvidaste tu contraseña?
+        </a>
+      </div>
+
       <div class="mt-2" style="text-align:center;">
         <button class="btn btn-primary login-btn" @click="submit" :disabled="loading">
           ⎆ Iniciar Sesión
@@ -98,6 +180,50 @@ async function submit() {
       </div>
 
       <p v-if="error" class="error-msg mt-1">{{ error }}</p>
+    </div>
+    
+    <!-- Modal de recuperación -->
+    <div v-if="showRecoveryModal" class="modal-overlay" role="dialog" aria-modal="true">
+      <div class="modal-card card">
+        <div class="modal-header">
+          <h3>Recuperar contraseña</h3>
+          <button class="close-btn" @click="closeRecoveryModal" aria-label="Cerrar">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="field form-floating">
+            <input 
+              id="ccodalu"
+              class="input fancy-input" 
+              placeholder=" "
+              v-model="recoveryForm.CCODALU"
+              inputmode="numeric"
+              pattern="\\d{10}"
+              maxlength="10"
+              @input="recoveryForm.CCODALU = String(recoveryForm.CCODALU).replace(/[^0-9]/g,'').slice(0,10)"
+            />
+            <label for="ccodalu">Código de alumno</label>
+          </div>
+          <div class="field form-floating">
+            <input 
+              id="cemail"
+              class="input fancy-input" 
+              placeholder=" "
+              v-model="recoveryForm.CEMAIL"
+              type="email"
+            />
+            <label for="cemail">Correo institucional</label>
+          </div>
+
+          <div class="mt-2">
+            <button class="btn btn-primary login-btn" style="width:100%" @click="sendRecoveryEmail" :disabled="sendingRecovery">
+              {{ sendingRecovery ? 'Enviando…' : 'Enviar correo' }}
+            </button>
+          </div>
+
+          <p v-if="recoveryMessage" class="ok-msg mt-1">{{ recoveryMessage }}</p>
+          <p v-if="recoveryError" class="error-msg mt-1">{{ recoveryError }}</p>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -222,6 +348,55 @@ async function submit() {
   border-radius: 8px;
   text-align: center;
 }
+
+.ok-msg {
+  color: #065f46;
+  padding: 12px;
+  background: rgba(5, 150, 105, 0.12);
+  border-radius: 8px;
+  text-align: center;
+}
+
+.forgot-wrap { margin-top: 8px; text-align: right; }
+.forgot-link { color: var(--verde-ucsm); text-decoration: underline; cursor: pointer; font-size: 14px; }
+.forgot-link:focus { outline: 2px solid rgba(5, 190, 106, 0.4); outline-offset: 2px; border-radius: 4px; }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  z-index: 1000;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 460px;
+  padding: 0;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 16px 0 16px;
+}
+
+.modal-body { padding: 8px 16px 16px 16px; }
+
+.close-btn {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.close-btn:hover { color: #111827; }
 
 @media (max-width: 480px) {
   .logo { font-size: 40px; }

@@ -7,6 +7,7 @@ const auth = useAuthStore()
 const items = ref([])
 const cargando = ref(false)
 const error = ref('')
+const descargando = ref({})
 
 // Variables para filtros de fecha
 const filtroDesde = ref('')
@@ -15,12 +16,13 @@ const filtroHasta = ref('')
 onMounted(async () => {
   // Establecer fecha por defecto (fecha actual)
   const fechaActual = new Date()
-  filtroDesde.value = fechaActual.toISOString().split('T')[0]
-  
+  const hoy = fechaActual.toISOString().split('T')[0]
+  filtroDesde.value = hoy
+  filtroHasta.value = hoy
   await cargarHistorialPacientes()
 })
 
-async function cargarHistorialPacientes(fechaEspecifica = null) {
+async function cargarHistorialPacientes() {
   try {
     cargando.value = true
     error.value = ''
@@ -37,28 +39,18 @@ async function cargarHistorialPacientes(fechaEspecifica = null) {
     console.log('Usuario autenticado completo:', auth.user)
     console.log('CDNIEST (DNI del estudiante):', auth.user?.CDNIEST)
     console.log('DNI del estudiante para historial:', dniEstudiante)
-    
-    let fechaParaAPI = null
-    
-    if (fechaEspecifica) {
-      // Si se especifica una fecha (como "2000-01-01" para mostrar todo)
-      fechaParaAPI = fechaEspecifica
-    } else if (filtroDesde.value && filtroHasta.value) {
-      // Si hay rango de fechas, usar la fecha desde
-      fechaParaAPI = filtroDesde.value
-    } else if (filtroDesde.value) {
-      // Si solo hay fecha desde, usar esa
-      fechaParaAPI = filtroDesde.value
-    } else {
-      // Por defecto, usar fecha actual
-      const fechaActual = new Date()
-      fechaParaAPI = fechaActual.toISOString().split('T')[0]
+
+    const inicio = filtroDesde.value
+    const fin = filtroHasta.value || filtroDesde.value
+
+    // Validación de rango
+    if (inicio && fin && new Date(inicio) > new Date(fin)) {
+      error.value = 'La fecha de inicio no puede ser posterior a la fecha final.'
+      return
     }
-    
-    console.log('Fecha para API:', fechaParaAPI)
-    
-    // Llamar a la API COD1021 con la fecha específica
-    const historialData = await pagoService.historialPacientesAtendidos(dniEstudiante, fechaParaAPI)
+
+    // Llamada única con rango
+    const historialData = await pagoService.historialPacientesAtendidos(dniEstudiante, inicio, fin)
     
     // Asignar directamente los datos de la API sin persistir
     items.value = historialData
@@ -86,42 +78,18 @@ async function buscarConFiltros() {
       return
     }
     
-    let fechasParaConsultar = []
+    const inicio = filtroDesde.value
+    const fin = filtroHasta.value || filtroDesde.value
     
-    if (filtroDesde.value && filtroHasta.value) {
-      // Si hay rango de fechas, generar todas las fechas entre desde y hasta
-      fechasParaConsultar = generarRangoFechas(filtroDesde.value, filtroHasta.value)
-    } else if (filtroDesde.value) {
-      // Si solo hay fecha desde, usar esa fecha
-      fechasParaConsultar = [filtroDesde.value]
-    } else {
-      // Por defecto, usar fecha actual
-      const fechaActual = new Date()
-      fechasParaConsultar = [fechaActual.toISOString().split('T')[0]]
+    // Validación de rango
+    if (inicio && fin && new Date(inicio) > new Date(fin)) {
+      error.value = 'La fecha de inicio no puede ser posterior a la fecha final.'
+      return
     }
-    
-    console.log('Fechas a consultar:', fechasParaConsultar)
-    
-    // Hacer peticiones para cada fecha y combinar resultados
-    const todosLosResultados = []
-    
-    for (const fecha of fechasParaConsultar) {
-      try {
-        console.log(`Consultando fecha: ${fecha}`)
-        const historialData = await pagoService.historialPacientesAtendidos(dniEstudiante, fecha)
-        if (historialData && historialData.length > 0) {
-          todosLosResultados.push(...historialData)
-        }
-      } catch (error) {
-        console.warn(`Error consultando fecha ${fecha}:`, error)
-        // Continuar con las demás fechas aunque una falle
-      }
-    }
-    
-    // Eliminar duplicados basándose en el código de pago
-    const resultadosUnicos = eliminarDuplicados(todosLosResultados)
-    
-    items.value = resultadosUnicos
+
+    // Llamada única con rango
+    const historialData = await pagoService.historialPacientesAtendidos(dniEstudiante, inicio, fin)
+    items.value = historialData
     console.log('Total de pacientes encontrados:', items.value.length)
     
   } catch (e) {
@@ -132,40 +100,7 @@ async function buscarConFiltros() {
   }
 }
 
-// Función para generar rango de fechas entre dos fechas
-function generarRangoFechas(fechaInicio, fechaFin) {
-  const fechas = []
-  const inicio = new Date(fechaInicio)
-  const fin = new Date(fechaFin)
-  
-  // Asegurar que la fecha de inicio no sea mayor que la de fin
-  if (inicio > fin) {
-    [inicio, fin] = [fin, inicio]
-  }
-  
-  const fechaActual = new Date(inicio)
-  
-  while (fechaActual <= fin) {
-    fechas.push(fechaActual.toISOString().split('T')[0])
-    fechaActual.setDate(fechaActual.getDate() + 1)
-  }
-  
-  return fechas
-}
-
-// Función para eliminar duplicados basándose en el código de pago
-function eliminarDuplicados(resultados) {
-  const unicos = new Map()
-  
-  resultados.forEach(item => {
-    const clave = item.codigo || item.CNROPAG
-    if (clave && !unicos.has(clave)) {
-      unicos.set(clave, item)
-    }
-  })
-  
-  return Array.from(unicos.values())
-}
+// Ya no se requiere generar rango por día ni eliminar duplicados
 
 // Función para limpiar filtros y mostrar fecha actual
 async function limpiarFiltros() {
@@ -192,11 +127,30 @@ function getEstadoIcon(estado) {
   }
 }
 
-function descargarDetalles(codigoPago) {
-  // Aquí se implementaría la lógica para descargar los detalles del pago facturado
-  // Por ahora, simulamos la descarga
-  const url = `https://transacciones.ucsm.edu.pe/descargas/${codigoPago}.pdf`
-  window.open(url, '_blank')
+async function descargarDetalles(item) {
+  try {
+    // Mostrar loader en el botón del registro específico
+    descargando.value = { ...descargando.value, [item.codigo]: true }
+    error.value = ''
+
+    // 1) Pedir nombre del PDF usando CBOLETA
+    const nombrePdf = await pagoService.obtenerNombreBoletaPdf(item.cboleta)
+
+    // 2) Forzar descarga del archivo
+    const url = `https://transacciones.ucsm.edu.pe//FILES/TMP/${encodeURIComponent(nombrePdf)}`
+    const a = document.createElement('a')
+    a.href = url
+    a.download = nombrePdf
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+  } catch (e) {
+    console.error('Descarga fallida:', e)
+    error.value = 'No se pudo descargar la boleta. Intenta nuevamente.'
+  } finally {
+    // Ocultar loader
+    descargando.value = { ...descargando.value, [item.codigo]: false }
+  }
 }
 
 function formatearFecha(fecha) {
@@ -311,10 +265,11 @@ function formatearFecha(fecha) {
             <button 
               v-if="it.estado === 'F'" 
               class="btn-descargar"
-              @click="descargarDetalles(it.codigo)"
+              @click="descargarDetalles(it)"
               title="Descargar detalles del pago facturado"
             >
-              📥 DESCARGAR
+              <span v-if="descargando[it.codigo]">⏳</span>
+              <span v-else>💾</span>
             </button>
           </div>
         </div>
