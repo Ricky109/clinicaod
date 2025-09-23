@@ -190,38 +190,44 @@ async function sendRecoveryEmail() {
           <button class="close-btn" @click="closeRecoveryModal" aria-label="Cerrar">×</button>
         </div>
         <div class="modal-body">
-          <div class="field form-floating">
-            <input 
-              id="ccodalu"
-              class="input fancy-input" 
-              placeholder=" "
-              v-model="recoveryForm.CCODALU"
-              inputmode="numeric"
-              pattern="\\d{10}"
-              maxlength="10"
-              @input="recoveryForm.CCODALU = String(recoveryForm.CCODALU).replace(/[^0-9]/g,'').slice(0,10)"
-            />
-            <label for="ccodalu">Código de alumno</label>
-          </div>
-          <div class="field form-floating">
-            <input 
-              id="cemail"
-              class="input fancy-input" 
-              placeholder=" "
-              v-model="recoveryForm.CEMAIL"
-              type="email"
-            />
-            <label for="cemail">Correo institucional</label>
-          </div>
+          <template v-if="!recoveryMessage">
+            <div class="field form-floating">
+              <input 
+                id="ccodalu"
+                class="input fancy-input" 
+                placeholder=" "
+                v-model="recoveryForm.CCODALU"
+                inputmode="numeric"
+                pattern="\\d{10}"
+                maxlength="10"
+                @input="recoveryForm.CCODALU = String(recoveryForm.CCODALU).replace(/[^0-9]/g,'').slice(0,10)"
+              />
+              <label for="ccodalu">Código de alumno</label>
+            </div>
+            <div class="field form-floating">
+              <input 
+                id="cemail"
+                class="input fancy-input" 
+                placeholder=" "
+                v-model="recoveryForm.CEMAIL"
+                type="email"
+              />
+              <label for="cemail">Correo institucional</label>
+            </div>
 
-          <div class="mt-2">
-            <button class="btn btn-primary login-btn" style="width:100%" @click="sendRecoveryEmail" :disabled="sendingRecovery">
-              {{ sendingRecovery ? 'Enviando…' : 'Enviar correo' }}
-            </button>
-          </div>
+            <div class="mt-2">
+              <button class="btn btn-primary login-btn" style="width:100%" @click="sendRecoveryEmail" :disabled="sendingRecovery">
+                {{ sendingRecovery ? 'Enviando…' : 'Enviar correo' }}
+              </button>
+            </div>
 
-          <p v-if="recoveryMessage" class="ok-msg mt-1">{{ recoveryMessage }}</p>
-          <p v-if="recoveryError" class="error-msg mt-1">{{ recoveryError }}</p>
+            <p v-if="recoveryError" class="error-msg mt-1">{{ recoveryError }}</p>
+          </template>
+          <template v-else>
+            <div style="text-align:center;">
+              <p class="ok-msg mt-1" style="margin: 12px auto;">{{ recoveryMessage }}</p>
+            </div>
+          </template>
         </div>
       </div>
     </div>

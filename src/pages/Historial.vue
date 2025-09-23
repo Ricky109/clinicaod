@@ -57,7 +57,7 @@ async function cargarHistorialPacientes() {
     console.log('Pacientes atendidos encontrados:', items.value)
     
   } catch (e) {
-    error.value = e.message || 'Error al cargar el historial de pacientes'
+    error.value = 'FALLÓ LA CONEXIÓN'
     console.error('Error:', e)
   } finally {
     cargando.value = false
@@ -83,7 +83,7 @@ async function buscarConFiltros() {
     
     // Validación de rango
     if (inicio && fin && new Date(inicio) > new Date(fin)) {
-      error.value = 'La fecha de inicio no puede ser posterior a la fecha final.'
+      error.value = 'LA FECHA DE INICIO NO PUEDE SER POSTERIOR A LA FECHA FINAL.'
       return
     }
 
@@ -129,29 +129,38 @@ function getEstadoIcon(estado) {
 
 async function descargarDetalles(item) {
   try {
-    // Mostrar loader en el botón del registro específico
     descargando.value = { ...descargando.value, [item.codigo]: true }
     error.value = ''
 
-    // 1) Pedir nombre del PDF usando CBOLETA
+    // 1) Pedir nombre del PDF
     const nombrePdf = await pagoService.obtenerNombreBoletaPdf(item.cboleta)
 
-    // 2) Forzar descarga del archivo
-    const url = `https://transacciones.ucsm.edu.pe//FILES/TMP/${encodeURIComponent(nombrePdf)}`
+    // 2) Construir nombre custom
+    const formattedDate = formatearFecha(item.fecha)
+    const safePatient = String(item.paciente || '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, '_')
+      .replace(/[^\w]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '')
+    const customFilename = `${safePatient}_FACTURADA_${formattedDate}.pdf`
+
+    // 3) Crear link de descarga (sin fetch, para evitar CORS)
     const a = document.createElement('a')
-    a.href = url
-    a.download = nombrePdf
+    a.href = encodeURIComponent(nombrePdf)
+    a.download = customFilename   // <- Aquí fuerzas el nombre
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
+
   } catch (e) {
     console.error('Descarga fallida:', e)
     error.value = 'No se pudo descargar la boleta. Intenta nuevamente.'
   } finally {
-    // Ocultar loader
     descargando.value = { ...descargando.value, [item.codigo]: false }
   }
 }
+
 
 function formatearFecha(fecha) {
   if (!fecha) return 'No disponible'
