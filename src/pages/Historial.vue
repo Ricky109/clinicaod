@@ -133,24 +133,13 @@ async function descargarDetalles(item) {
     descargando.value = { ...descargando.value, [item.codigo]: true }
     error.value = ''
 
-    // 1) Pedir nombre del PDF
-    const nombrePdf = await pagoService.obtenerNombreBoletaPdf(item.cboleta)
+    // Armar la URL real con el prefijo correcto
+    const url = `https://transacciones.ucsm.edu.pe//FILES/TMP/${item.cboleta}`
 
-    // 2) Construir nombre custom
-    const formattedDate = formatearFecha(item.fecha)
-    const safePatient = String(item.paciente || '')
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .replace(/\s+/g, '_')
-      .replace(/[^\w]/g, '_')
-      .replace(/_+/g, '_')
-      .replace(/^_+|_+$/g, '')
-    const customFilename = `${safePatient}_FACTURADA_${formattedDate}.pdf`
-
-    // 3) Forzar descarga con nombre custom
+    // Crear el link y forzar la descarga
     const a = document.createElement('a')
-    a.href = nombrePdf   // 👈 usar URL tal cual
-    a.download = customFilename
-    a.style.display = 'none'
+    a.href = url
+    a.download = '' // se usa el nombre que mande el servidor
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -162,6 +151,9 @@ async function descargarDetalles(item) {
     descargando.value = { ...descargando.value, [item.codigo]: false }
   }
 }
+
+
+
 
 
 
