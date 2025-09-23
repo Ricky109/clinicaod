@@ -133,25 +133,19 @@ async function descargarDetalles(item) {
     descargando.value = { ...descargando.value, [item.codigo]: true }
     error.value = ''
 
-    // Armar la URL real con el prefijo correcto
+    // Construir la URL real
     const url = `https://transacciones.ucsm.edu.pe//FILES/TMP/${item.cboleta}`
 
-    // Crear el link y forzar la descarga
-    const a = document.createElement('a')
-    a.href = url
-    a.download = '' // se usa el nombre que mande el servidor
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
+    // Abrir en nueva pestaña (se mostrará el PDF directamente)
+    window.open(url, '_blank')
 
   } catch (e) {
-    console.error('Descarga fallida:', e)
-    error.value = 'No se pudo descargar la boleta. Intenta nuevamente.'
+    console.error('Error al abrir boleta:', e)
+    error.value = 'No se pudo abrir la boleta. Intenta nuevamente.'
   } finally {
     descargando.value = { ...descargando.value, [item.codigo]: false }
   }
 }
-
 
 
 
