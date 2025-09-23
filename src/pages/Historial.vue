@@ -127,6 +127,7 @@ function getEstadoIcon(estado) {
   }
 }
 
+//DESCARGAR BOLETA
 async function descargarDetalles(item) {
   try {
     descargando.value = { ...descargando.value, [item.codigo]: true }
@@ -145,10 +146,11 @@ async function descargarDetalles(item) {
       .replace(/^_+|_+$/g, '')
     const customFilename = `${safePatient}_FACTURADA_${formattedDate}.pdf`
 
-    // 3) Crear link de descarga (sin fetch, para evitar CORS)
+    // 3) Forzar descarga con nombre custom
     const a = document.createElement('a')
-    a.href = encodeURIComponent(nombrePdf)
-    a.download = customFilename   // <- Aquí fuerzas el nombre
+    a.href = nombrePdf   // 👈 usar URL tal cual
+    a.download = customFilename
+    a.style.display = 'none'
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -160,6 +162,7 @@ async function descargarDetalles(item) {
     descargando.value = { ...descargando.value, [item.codigo]: false }
   }
 }
+
 
 
 function formatearFecha(fecha) {
