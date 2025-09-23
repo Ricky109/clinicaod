@@ -76,11 +76,11 @@ async function sendRecoveryEmail() {
     const codigo = String(recoveryForm.value.CCODALU || '').replace(/[^0-9]/g, '').slice(0, 10)
     const email = String(recoveryForm.value.CEMAIL || '').trim()
     if (!codigo || codigo.length !== 10) {
-      recoveryError.value = 'Ingrese un código de alumno válido'
+      recoveryError.value = 'INGRESE UN CÓDIGO DE ALUMNO VÁLIDO'
       return
     }
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      recoveryError.value = 'Ingrese un correo institucional válido'
+      recoveryError.value = 'INGRESE UN CORREO INSTITUCIONAL VÁLIDO'
       return
     }
 
@@ -98,7 +98,7 @@ async function sendRecoveryEmail() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(firstPayload)
     })
-    if (!firstRes.ok) throw new Error('No se pudo generar la nueva contraseña')
+    if (!firstRes.ok) throw new Error('NO SE PUDO GENERAR LA NUEVA CONTRASEÑA')
     const firstData = await firstRes.json()
 
     // 2) Enviar correo con la nueva contraseña
@@ -116,11 +116,11 @@ async function sendRecoveryEmail() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(secondPayload)
     })
-    if (!secondRes.ok) throw new Error('No se pudo enviar el correo')
+    if (!secondRes.ok) throw new Error('NO SE PUDO ENVIAR EL CORREO')
 
-    recoveryMessage.value = 'Correo enviado con éxito'
+    recoveryMessage.value = 'CORREO ENVIADO CON ÉXITO'
   } catch (e) {
-    recoveryError.value = e.message || 'Error al enviar correo'
+    recoveryError.value = e.message || 'ERROR AL ENVIAR CORREO'
   } finally {
     sendingRecovery.value = false
   }
@@ -146,7 +146,7 @@ async function sendRecoveryEmail() {
           maxlength="10"
           @input="form.CNRODNI = form.CNRODNI.replace(/[^0-9]/g,'').slice(0,10)"
         />
-        <label for="codigo">CÓDIGO</label>
+        <label for="codigo">CÓDIGO DE ESTUDIANTE</label>
       </div>
 
       <div class="field password-field form-floating">
@@ -186,7 +186,7 @@ async function sendRecoveryEmail() {
     <div v-if="showRecoveryModal" class="modal-overlay" role="dialog" aria-modal="true">
       <div class="modal-card card">
         <div class="modal-header">
-          <h3>Recuperar contraseña</h3>
+          <h3>RECUPERAR CONTRASEÑA</h3>
           <button class="close-btn" @click="closeRecoveryModal" aria-label="Cerrar">×</button>
         </div>
         <div class="modal-body">
@@ -202,7 +202,7 @@ async function sendRecoveryEmail() {
                 maxlength="10"
                 @input="recoveryForm.CCODALU = String(recoveryForm.CCODALU).replace(/[^0-9]/g,'').slice(0,10)"
               />
-              <label for="ccodalu">Código de alumno</label>
+              <label for="ccodalu">CÓDIGO DE ESTUDIANTE</label>
             </div>
             <div class="field form-floating">
               <input 
@@ -212,7 +212,7 @@ async function sendRecoveryEmail() {
                 v-model="recoveryForm.CEMAIL"
                 type="email"
               />
-              <label for="cemail">Correo institucional</label>
+              <label for="cemail">CORREO INSTITUCIONAL</label>
             </div>
 
             <div class="mt-2">

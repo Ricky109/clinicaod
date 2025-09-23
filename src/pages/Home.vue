@@ -18,7 +18,7 @@ const auth = useAuthStore()
         <div class="card-icon">
           <div class="icon-search">🔍</div>
         </div>
-        <div class="card-text">Buscar/Registrar Paciente</div>
+        <div class="card-text">BUSCAR/REGISTRAR PACIENTE</div>
       </router-link>
 
       <!-- Card Historial de Pagos -->
@@ -26,7 +26,7 @@ const auth = useAuthStore()
         <div class="card-icon">
           <div class="icon-chart">📊</div>
         </div>
-        <div class="card-text">Historial de Pagos</div>
+        <div class="card-text">HISTORIAL DE PAGOS</div>
       </router-link>
 
     </div>
